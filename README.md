@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # NTEAutoPlay
 
 This template should help get you started developing with Vue 3 in Vite.
@@ -40,3 +41,7 @@ npm run dev
 ```sh
 npm run build
 ```
+=======
+# NTEAutoplayEditor
+适用于异环自动演奏脚本的网页乐谱编辑器
+>>>>>>> 22a90a96455f533fc3cf429a6ac801c243165068
