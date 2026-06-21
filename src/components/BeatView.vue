@@ -8,7 +8,7 @@
  * 尺寸由 layouts.ts 中的 BEAT 常量控制，修改常量即可全局调试。
  */
 
-import { BEAT } from '@/utils/layout'
+import { BEAT, BEAT_MOBILE } from '@/utils/layout'
 
 const NOTES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'] as const
 
@@ -49,10 +49,7 @@ function isActive(note: Note, octave: number): boolean {
     :class="{ 'beat-view--selected': selected }"
     @click="$emit('click')"
   >
-    <!-- 编号 -->
     <div class="beat-label">{{ label }}</div>
-
-    <!-- 3 行 × 12 列圆点 -->
     <div class="beat-grid">
       <div v-for="row in rows" :key="row.octave" class="beat-row">
         <div
@@ -71,6 +68,7 @@ function isActive(note: Note, octave: number): boolean {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: v-bind('BEAT.LABEL_GAP + "px"');
   padding: v-bind('BEAT.PADDING_Y + "px"') v-bind('BEAT.PADDING_X + "px"');
   border: v-bind('BEAT.BORDER + "px"') solid var(--color-border-base, #e2e8f0);
@@ -83,6 +81,7 @@ function isActive(note: Note, octave: number): boolean {
 
   /* 显式尺寸，与 layout.ts 常量同步 */
   width: v-bind('BEAT.WIDTH + "px"');
+  height: v-bind('BEAT.HEIGHT + "px"');
 }
 
 .beat-view:hover {
@@ -141,5 +140,26 @@ function isActive(note: Note, octave: number): boolean {
 
 .dark .beat-dot--on {
   background: #48cae4;
+}
+
+/* ─── 移动端（使用 BEAT_MOBILE 常量） ─── */
+@media (max-width: 767px) {
+  .beat-view {
+    padding: v-bind('BEAT_MOBILE.PADDING_Y + "px"') v-bind('BEAT_MOBILE.PADDING_X + "px"');
+    border-width: v-bind('BEAT_MOBILE.BORDER + "px"');
+  }
+  .beat-label {
+    font-size: v-bind('BEAT_MOBILE.LABEL_FONT_SIZE + "px"');
+  }
+  .beat-grid {
+    gap: v-bind('BEAT_MOBILE.ROW_GAP + "px"');
+  }
+  .beat-row {
+    gap: v-bind('BEAT_MOBILE.DOT_GAP + "px"');
+  }
+  .beat-dot {
+    width: v-bind('BEAT_MOBILE.DOT_SIZE + "px"');
+    height: v-bind('BEAT_MOBILE.DOT_SIZE + "px"');
+  }
 }
 </style>

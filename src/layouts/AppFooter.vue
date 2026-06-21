@@ -242,4 +242,43 @@ function dbl()   { editor.nvrDouble(); syncNvr() }
   font-weight: 500;
   color: var(--color-text-placeholder, #a0b0c0);
 }
+
+/* ─── 移动端 ─── */
+@media (max-width: 767px) {
+  .app-footer {
+    height: 56px;
+    padding: 0 8px;
+  }
+  .ctrl {
+    width: 30px;
+    height: 30px;
+  }
+  .ctrl svg,
+  .ctrl-icon {
+    width: 16px;
+    height: 16px;
+  }
+  .ctrl--play {
+    width: 34px;
+    height: 32px;
+  }
+  .footer-center {
+    gap: 3px;
+  }
+  .nvr-box {
+    padding: 2px 4px;
+  }
+  .nvr-btn {
+    width: 24px;
+    height: 26px;
+    font-size: 15px;
+  }
+  .nvr-inp {
+    width: 28px;
+    font-size: 12px;
+  }
+  .nvr-slash {
+    font-size: 13px;
+  }
+}
 </style>

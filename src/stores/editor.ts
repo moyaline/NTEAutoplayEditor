@@ -21,7 +21,9 @@ export const useEditorStore = defineStore('editor', () => {
   const isNewFile = ref(true)
   const soundEnabled = ref(load('soundEnabled', true))
   const soundVolume = ref(load('soundVolume', 0.5))
-  const rowsPerPage = ref(load('rowsPerPage', 2))
+  /** 移动端默认 1 行，桌面端 2 行 */
+  const defaultRows = typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 2
+  const rowsPerPage = ref(load('rowsPerPage', defaultRows))
 
   // ─── 持久化：设置变化时自动写入 localStorage ──
   watch(soundEnabled, v => save('soundEnabled', v))
@@ -253,10 +255,7 @@ export const useEditorStore = defineStore('editor', () => {
     const data = {
       bpm: sheetData.value.bpm,
       sheet: sheetData.value.beats.map(b => ({
-        note: b.rawNotes.length > 0 ? b.rawNotes : b.keys.map(k => {
-          // 尽量还原 rawNotes，没有则用 keyId
-          return k
-        }),
+        note: b.rawNotes.length > 0 ? b.rawNotes : b.keys.map(k => k),
         nvr: { num: b.num, den: b.den },
       })),
     }

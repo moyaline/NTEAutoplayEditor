@@ -85,6 +85,8 @@ const totalDuration = computed(() => {
 .app-sidebar {
   grid-area: sidebar;
   width: 270px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar-input {

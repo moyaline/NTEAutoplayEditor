@@ -76,7 +76,7 @@ function handleSave() {
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-        新建
+        <span class="btn-text">新建</span>
       </button>
       <button
         class="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-(--color-text-secondary) hover:bg-(--color-border-base) transition-all"
@@ -86,7 +86,7 @@ function handleSave() {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
         </svg>
-        打开
+        <span class="btn-text">打开</span>
       </button>
       <button
         class="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:opacity-90 transition-all"
@@ -98,7 +98,7 @@ function handleSave() {
           <polyline points="17,21 17,13 7,13 7,21" />
           <polyline points="7,3 7,8 15,8" />
         </svg>
-        保存
+        <span class="btn-text">保存</span>
       </button>
     </div>
 
@@ -237,5 +237,19 @@ function handleSave() {
 /* Dark mode popup */
 .dark .about-card {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── 移动端 ─── */
+@media (max-width: 767px) {
+  .app-header {
+    height: 48px;
+    padding: 0 10px;
+  }
+  .app-header h1 {
+    font-size: 12px;
+  }
+  .app-header .btn-text {
+    display: none;
+  }
 }
 </style>

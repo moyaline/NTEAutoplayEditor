@@ -57,12 +57,9 @@ function keyId(note: Note, octave: number): string {
       :key="row.octave"
       class="keypad-row"
     >
-      <!-- 音区标签 -->
       <div class="keypad-tag">
         <span>{{ row.label }}</span>
       </div>
-
-      <!-- 12 个键 -->
       <div class="keypad-keys">
         <div
           v-for="note in NOTES"
@@ -206,5 +203,38 @@ function keyId(note: Note, octave: number): string {
   border-color: var(--color-primary-300, #48cae4);
   box-shadow: inset 0 0 0 2px var(--color-primary-300, #48cae4),
               0 0 0 2px rgba(72, 202, 228, 0.25);
+}
+
+/* ─── 移动端缩放 ─── */
+@media (max-width: 767px) {
+  .keypad {
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  .keypad-row {
+    gap: 10px;
+  }
+  .keypad-tag {
+    width: 36px;
+    font-size: 11px;
+  }
+  .keypad-keys {
+    gap: 10px;
+  }
+  .keypad-key-plate {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+  .keypad-key-plate-inner {
+    width: 25px;
+    height: 25px;
+  }
+  .keypad-key-note {
+    font-size: 10px;
+  }
+  .keypad-key-octave {
+    font-size: 7px;
+  }
 }
 </style>

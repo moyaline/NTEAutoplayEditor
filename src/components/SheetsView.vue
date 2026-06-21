@@ -82,13 +82,10 @@ const cells = computed<Cell[]>(() => {
 
   for (let i = 0; i < totalSlots; i++) {
     if (i < pageBeats.length) {
-      // 有 Beat → 渲染 Beat
       result.push({ type: 'beat', beat: pageBeats[i]!, globalIndex: start + i })
     } else if (i === pageBeats.length) {
-      // 第一个空位 → 追加框
       result.push({ type: 'add' })
     } else {
-      // 其余空位 → 占位符
       result.push({ type: 'placeholder' })
     }
   }
@@ -122,7 +119,6 @@ defineExpose({ goToBeat })
 
 <template>
   <div class="sheets">
-    <!-- 左翻页（垂直居中） -->
     <button
       class="sheets-nav"
       :disabled="currentPage <= 0"
@@ -134,7 +130,6 @@ defineExpose({ goToBeat })
       </svg>
     </button>
 
-    <!-- Beat 区域（CSS Grid，固定列，左对齐，空格占位） -->
     <div ref="bodyRef" class="sheets-body">
       <div class="sheets-grid">
         <template v-for="(cell, cIdx) in cells" :key="cIdx">
@@ -146,8 +141,7 @@ defineExpose({ goToBeat })
             :label="cell.beat.label"
             @click="emit('select', cell.globalIndex)"
           />
-          <!-- 追加框 -->
-          <button
+                <button
             v-else-if="cell.type === 'add'"
             class="sheets-add-beat"
             title="添加 Beat"
@@ -158,13 +152,11 @@ defineExpose({ goToBeat })
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
           </button>
-          <!-- 空占位 -->
           <div v-else class="sheets-slot"></div>
         </template>
       </div>
     </div>
 
-    <!-- 右翻页（垂直居中） -->
     <button
       class="sheets-nav"
       :disabled="currentPage >= totalPages - 1"

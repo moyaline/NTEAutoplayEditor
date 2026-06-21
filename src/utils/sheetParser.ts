@@ -69,23 +69,20 @@ const PREFIX_OCTAVE: Record<string, number> = {
  */
 export function parseNoteToKeyId(note: string): string {
   let i = 0
-  let octave = 5 // 默认中音
+  let octave = 5
 
-  // 解析前缀
   const firstChar = note[0]
   if (firstChar === 'H' || firstChar === 'L') {
     octave = PREFIX_OCTAVE[firstChar]!
     i++
   }
 
-  // 解析音名
   const letter = note[i]
-  if (!letter) return note // fallback
+  if (!letter) return note
   const baseName = NOTE_MAP[letter]
-  if (!baseName) return note // fallback
+  if (!baseName) return note
   i++
 
-  // 解析后缀
   let accidental = ''
   if (i < note.length) {
     const suffix = note[i]
@@ -106,8 +103,8 @@ function lcm(a: number, b: number): number {
 }
 
 interface Fraction {
-  num: number // 分子
-  den: number // 分母
+  num: number
+  den: number
 }
 
 /**
@@ -119,7 +116,6 @@ function decimalToFraction(value: number): Fraction {
   let num = 1
   let den = 1
 
-  // 不断放大直到接近整数
   for (let i = 1; i <= 1000000; i *= 2) {
     const scaled = value * i
     const rounded = Math.round(scaled)
@@ -174,14 +170,12 @@ export function parseNvr(raw: unknown): { num: number; den: number; value: numbe
     const r = raw as Record<string, number>
     let num = r.num ?? 1
     let den = r.den ?? 8
-    // 约分
     const reduced = reduceFraction(num, den)
     num = reduced.num
     den = reduced.den
     return { num, den, value: num / den }
   }
   const nvr = (typeof raw === 'number' ? raw : 0.5)
-  // 转为分数
   const f = decimalToFraction(nvr)
   return { num: f.num, den: f.den, value: nvr }
 }
