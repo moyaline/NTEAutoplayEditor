@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+/* 2. 通过 @theme 定义所有自定义设计令牌 */
+@theme {
+    --color-primary-50: #e8f7fa;
+    --color-primary-200: #90e0ef;
+    --color-primary-300: #48cae4;
+    --color-primary-400: #00b4d8;
+    --color-primary-500: #0096b7;
+    --color-primary-600: #0077a0;
+    --color-primary: var(--color-primary-400);
+
+    --color-success: #2ecc71;
+    --color-success-hover: #27ae60;
+    --color-warning: #f39c12;
+    --color-warning-hover: #e67e22;
+    --color-danger: #e74c3c;
+    --color-danger-hover: #c0392b;
+    --color-info: #3498db;
+    --color-info-hover: #2980b9;
+
+    --background-image-gradient-primary: linear-gradient(135deg, #00b4d8, #0077a0);
+    --background-image-gradient-fresh: linear-gradient(135deg, #90e0ef, #00b4d8);
+    --background-image-gradient-page: linear-gradient(180deg, #e8f7fa 0%, #ffffff 100%);
+}
+
+/*
+ * 3. 通过 CSS 变量定义语义化颜色，用于支持深色模式
+ *    注意：这些是普通的CSS变量，不是 @theme 令牌
+ */
+@layer base {
+    :root {
+        --color-page-bg: #f8fafc;
+        --color-card-bg: #ffffff;
+        --color-text-main: #1a2a3a;
+        --color-text-secondary: #5a6b7a;
+        --color-text-placeholder: #a0b0c0;
+        --color-border-base: #e2e8f0;
+    }
+
+    .dark {
+        --color-page-bg: #0b1a26;
+        --color-card-bg: #142834;
+        --color-text-main: #e8f0f8;
+        --color-text-secondary: #8aa0b0;
+        --color-text-placeholder: #5a6b7a;
+        --color-border-base: #2a3a4a;
+    }
+
+    *,
+    *::before,
+    *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html,
+    body,
+    #app {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+        background-color: var(--color-page-bg);
+        color: var(--color-text-main);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--color-border-base);
+        border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--color-text-placeholder);
+    }
+
+    ::selection {
+        background-color: var(--color-primary-200);
+        color: var(--color-text-main);
+    }
+}
