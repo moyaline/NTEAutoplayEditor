@@ -2,13 +2,14 @@
 /**
  * AppFooter —— 播放器风格控制栏
  *
- * 左: 状态 + BPM
+ * 左: 音频加载状态
  * 中: 播放控制（⏮ ⏪ ▶/⏸ ⏩ ⏭）
- * 右: 时值编辑（− [num/den] +） | 引擎版本
+ * 右: 时值编辑（− [num/den] +）
  */
 
 import { ref, watch } from 'vue'
 import { useEditorStore } from '@/stores/editor'
+import { loadProgress } from '@/utils/notePlayer'
 
 const editor = useEditorStore()
 
@@ -42,12 +43,29 @@ function commitDen() {
 
 function halve() { editor.nvrHalve(); syncNvr() }
 function dbl()   { editor.nvrDouble(); syncNvr() }
+
+// ─── 音频加载状态 ──────────────────────────
+const showLoadComplete = ref(false)
+
+watch(() => loadProgress.value.loaded, (val) => {
+  if (val >= loadProgress.value.total) {
+    showLoadComplete.value = true
+    setTimeout(() => { showLoadComplete.value = false }, 3000)
+  }
+})
 </script>
 
 <template>
   <footer class="app-footer">
-    <!-- 左侧留空占位，保持中心对称 -->
-    <div class="footer-left"></div>
+    <!-- 左侧：音频加载状态 -->
+    <div class="footer-left">
+      <span v-if="loadProgress.loaded < loadProgress.total" class="audio-status">
+        音频加载 {{ loadProgress.loaded }}/{{ loadProgress.total }}
+      </span>
+      <span v-else-if="showLoadComplete" class="audio-status audio-status--done">
+        音频加载完成
+      </span>
+    </div>
 
     <!-- ═══ 播放控制（强制居中） ═══ -->
     <div class="footer-center">
@@ -119,6 +137,23 @@ function dbl()   { editor.nvrDouble(); syncNvr() }
 }
 
 
+
+/* ─── 播放控制 ─── */
+/* ─── 左侧 ─── */
+.footer-left {
+  display: flex;
+  align-items: center;
+}
+
+.audio-status {
+  font-size: 12px;
+  color: var(--color-text-placeholder, #a0b0c0);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.audio-status--done {
+  color: var(--color-primary-500, #0096b7);
+}
 
 /* ─── 播放控制 ─── */
 .footer-center {
