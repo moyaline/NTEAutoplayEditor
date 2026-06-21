@@ -52,10 +52,10 @@ function dbl()   { editor.nvrDouble(); syncNvr() }
     <!-- ═══ 播放控制（强制居中） ═══ -->
     <div class="footer-center">
       <button class="ctrl" title="跳转首拍 (Ctrl+←)" @click="editor.firstBeat()">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        <svg class="ctrl-icon ctrl-icon--flip" viewBox="0 0 1024 1024" fill="currentColor"><path d="M170.666667 742.4v29.866667c0 32 32 51.2 57.6 36.266666l420.266666-262.4c25.6-17.066667 25.6-55.466667 0-72.533333L228.266667 215.466667c-25.6-17.066667-57.6 4.266667-57.6 36.266666v490.666667M812.8 859.733333c-23.466667 0-42.666667-19.2-42.666667-42.666666V206.933333c0-23.466667 19.2-42.666667 42.666667-42.666666s42.666667 19.2 42.666667 42.666666v608c0 25.6-17.066667 44.8-42.666667 44.8z"/></svg>
       </button>
       <button class="ctrl" title="上一拍 (←)" @click="editor.prevBeat()">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5-6v12z"/></svg>
+        <svg class="ctrl-icon ctrl-icon--flip" viewBox="0 0 1024 1024" fill="currentColor"><path d="M170.666667 742.4v29.866667c0 32 32 51.2 57.6 36.266666l420.266666-262.4c25.6-17.066667 25.6-55.466667 0-72.533333L228.266667 215.466667c-25.6-17.066667-57.6 4.266667-57.6 36.266666v490.666667"/></svg>
       </button>
       <button
         class="ctrl ctrl--play"
@@ -66,10 +66,10 @@ function dbl()   { editor.nvrDouble(); syncNvr() }
         <svg v-else viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       </button>
       <button class="ctrl" title="下一拍 (→)" @click="editor.nextBeat()">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+        <svg class="ctrl-icon" viewBox="0 0 1024 1024" fill="currentColor"><path d="M170.666667 742.4v29.866667c0 32 32 51.2 57.6 36.266666l420.266666-262.4c25.6-17.066667 25.6-55.466667 0-72.533333L228.266667 215.466667c-25.6-17.066667-57.6 4.266667-57.6 36.266666v490.666667"/></svg>
       </button>
       <button class="ctrl" title="跳转尾拍 (Ctrl+→)" @click="editor.lastBeat()">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2zM4 6v12h2V6H4z"/></svg>
+        <svg class="ctrl-icon" viewBox="0 0 1024 1024" fill="currentColor"><path d="M170.666667 742.4v29.866667c0 32 32 51.2 57.6 36.266666l420.266666-262.4c25.6-17.066667 25.6-55.466667 0-72.533333L228.266667 215.466667c-25.6-17.066667-57.6 4.266667-57.6 36.266666v490.666667M812.8 859.733333c-23.466667 0-42.666667-19.2-42.666667-42.666666V206.933333c0-23.466667 19.2-42.666667 42.666667-42.666666s42.666667 19.2 42.666667 42.666666v608c0 25.6-17.066667 44.8-42.666667 44.8z"/></svg>
       </button>
     </div>
 
@@ -147,9 +147,14 @@ function dbl()   { editor.nvrDouble(); syncNvr() }
 .ctrl:active {
   transform: scale(0.92);
 }
-.ctrl svg {
+.ctrl svg,
+.ctrl-icon {
   width: 20px;
   height: 20px;
+}
+
+.ctrl-icon--flip {
+  transform: scaleX(-1);
 }
 
 .ctrl--play {
