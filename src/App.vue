@@ -17,9 +17,11 @@ function toggleSidebar() {
 async function toggleFullscreen() {
   if (!document.fullscreenElement) {
     await document.documentElement.requestFullscreen()
+    await new Promise(r => setTimeout(r, 200))
     try { await screen.orientation.lock('landscape') } catch {}
   } else {
     await document.exitFullscreen()
+    try { screen.orientation.unlock() } catch {}
   }
 }
 
@@ -172,7 +174,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   50% { transform: rotate(90deg); }
 }
 
-@media (orientation: portrait) and (max-height: 500px) {
+@media (orientation: portrait) and (max-width: 500px) {
   .rotate-hint {
     display: flex;
   }
