@@ -95,10 +95,10 @@ const rowOptions = [1, 2, 3, 4]
       <section class="settings-section">
         <h3 class="section-title">快捷键</h3>
         <div class="shortcuts-list">
-          <div class="shortcut-row"><kbd>←</kbd><span>上一个 Beat</span></div>
-          <div class="shortcut-row"><kbd>→</kbd><span>下一个 Beat</span></div>
-          <div class="shortcut-row"><kbd>Ctrl + ←</kbd><span>跳转到第一个 Beat</span></div>
-          <div class="shortcut-row"><kbd>Ctrl + →</kbd><span>跳转到最后一个 Beat</span></div>
+          <div class="shortcut-row"><kbd>←</kbd><span>上一个拍</span></div>
+          <div class="shortcut-row"><kbd>→</kbd><span>下一个拍</span></div>
+          <div class="shortcut-row"><kbd>Ctrl + ←</kbd><span>跳转到第一个拍</span></div>
+          <div class="shortcut-row"><kbd>Ctrl + →</kbd><span>跳转到最后一个拍</span></div>
           <div class="shortcut-row"><kbd>Space</kbd><span>播放 / 暂停</span></div>
         </div>
       </section>
@@ -163,7 +163,7 @@ const rowOptions = [1, 2, 3, 4]
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 600px;
+  /* max-width: 800px; */
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }

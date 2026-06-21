@@ -22,7 +22,7 @@ export const useEditorStore = defineStore('editor', () => {
   const soundEnabled = ref(load('soundEnabled', true))
   const soundVolume = ref(load('soundVolume', 0.5))
   /** 移动端默认 1 行，桌面端 2 行 */
-  const defaultRows = typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 2
+  const defaultRows = typeof window !== 'undefined' && window.innerHeight <= 500 ? 1 : 2
   const rowsPerPage = ref(load('rowsPerPage', defaultRows))
 
   // ─── 持久化：设置变化时自动写入 localStorage ──

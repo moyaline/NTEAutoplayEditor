@@ -244,7 +244,7 @@ function dbl()   { editor.nvrDouble(); syncNvr() }
 }
 
 /* ─── 移动端 ─── */
-@media (max-width: 767px) {
+@media (orientation: landscape) and (max-height: 500px) {
   .app-footer {
     height: 56px;
     padding: 0 8px;

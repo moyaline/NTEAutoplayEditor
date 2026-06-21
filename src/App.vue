@@ -8,17 +8,18 @@ import AppFooter from '@/layouts/AppFooter.vue'
 
 const router = useRouter()
 const editor = useEditorStore()
-const sidebarOpen = ref(window.innerWidth >= 768)
+const sidebarOpen = ref(window.innerHeight > 500)
 
 function toggleSidebar() {
   sidebarOpen.value = !sidebarOpen.value
 }
 
-function toggleFullscreen() {
+async function toggleFullscreen() {
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen()
+    await document.documentElement.requestFullscreen()
+    try { await screen.orientation.lock('landscape') } catch {}
   } else {
-    document.exitFullscreen()
+    await document.exitFullscreen()
   }
 }
 
@@ -110,7 +111,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   background: rgba(0, 0, 0, 0.3);
 }
 
-@media (max-width: 767px) {
+/* ─── 移动端（横屏 + 小高度） ─── */
+@media (orientation: landscape) and (max-height: 500px) {
   .sidebar-overlay {
     display: block;
   }
@@ -130,7 +132,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 }
 
 /* ─── 桌面端侧边栏折叠 ─── */
-@media (min-width: 768px) {
+@media (min-height: 501px) {
   .app-sidebar {
     transition: width 0.25s ease, opacity 0.2s ease;
     overflow: hidden;
@@ -170,7 +172,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   50% { transform: rotate(90deg); }
 }
 
-@media (max-width: 767px) and (orientation: portrait) {
+@media (orientation: portrait) and (max-height: 500px) {
   .rotate-hint {
     display: flex;
   }

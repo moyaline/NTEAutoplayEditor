@@ -206,7 +206,7 @@ function keyId(note: Note, octave: number): string {
 }
 
 /* ─── 移动端缩放 ─── */
-@media (max-width: 767px) {
+@media (orientation: landscape) and (max-height: 500px) {
   .keypad {
     gap: 8px;
     padding: 12px 14px;

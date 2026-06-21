@@ -143,7 +143,7 @@ function isActive(note: Note, octave: number): boolean {
 }
 
 /* ─── 移动端（使用 BEAT_MOBILE 常量） ─── */
-@media (max-width: 767px) {
+@media (orientation: landscape) and (max-height: 500px) {
   .beat-view {
     padding: v-bind('BEAT_MOBILE.PADDING_Y + "px"') v-bind('BEAT_MOBILE.PADDING_X + "px"');
     border-width: v-bind('BEAT_MOBILE.BORDER + "px"');

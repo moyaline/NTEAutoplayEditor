@@ -281,7 +281,7 @@ function handleSave() {
 }
 
 /* ─── 移动端 ─── */
-@media (max-width: 767px) {
+@media (orientation: landscape) and (max-height: 500px) {
   .app-header {
     height: 48px;
     padding: 0 10px;
