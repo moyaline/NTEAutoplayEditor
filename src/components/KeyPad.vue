@@ -4,6 +4,7 @@
  *
  * 36 个键 (C4–B6)，三行排列（高音/中音/低音），每行 12 个键。
  * 盘子样式：大圆黑边描边 + 内嵌小圆 + 中央音名。
+ * 支持多点触控，可同时按下多个键。
  */
 import { watch } from 'vue'
 import { playNote, setSoundVolume } from '@/utils/notePlayer'
@@ -28,6 +29,12 @@ function handleKeyClick(keyId: string) {
     playNote(keyId)
   }
   emit('keyClick', keyId)
+}
+
+function onTouchStart(e: TouchEvent, keyId: string) {
+  // 阻止默认行为，避免页面滚动或缩放干扰多点
+  e.preventDefault()
+  handleKeyClick(keyId)
 }
 
 const NOTES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'] as const
@@ -67,6 +74,7 @@ function keyId(note: Note, octave: number): string {
           class="keypad-key"
           :class="{ 'keypad-key--active': activeKeys?.includes(keyId(note, row.octave)) }"
           @click="handleKeyClick(keyId(note, row.octave))"
+          @touchstart="onTouchStart($event, keyId(note, row.octave))"
         >
           <div class="keypad-key-plate">
             <div class="keypad-key-plate-inner">
@@ -127,6 +135,7 @@ function keyId(note: Note, octave: number): string {
 .keypad-key {
   cursor: pointer;
   transition: transform 0.1s ease;
+  touch-action: manipulation;
 }
 
 .keypad-key:hover {

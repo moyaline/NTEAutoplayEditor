@@ -5,7 +5,7 @@
  * CSS Grid 固定列布局，左对齐。
  * 每行 N 个槽位（= beatsPerRow），未使用的槽位以空占位符填充。
  * 追加框占据最后一个 Beat 之后的第一个槽位。
- * Sheets 高度仅由 rowsPerPage 决定，不受实际 Beat 数量影响。
+ * rowsPerPage 由父组件根据可用空间动态计算传入。
  */
 
 import { ref, computed, onMounted, onUnmounted } from 'vue'

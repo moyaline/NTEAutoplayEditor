@@ -5,7 +5,7 @@
  * 设置项：
  *   - 按键音开关
  *   - 按键音音量（开关关闭时不可用）
- *   - Sheet 展示行数（1–4）
+ *   - Sheet 最大行数（1–4，实际行数由可用高度决定）
  */
 
 import { useEditorStore } from '@/stores/editor'
@@ -76,7 +76,7 @@ const rowOptions = [1, 2, 3, 4]
         <h3 class="section-title">乐谱视图</h3>
 
         <label class="settings-row">
-          <span class="settings-label">每页行数</span>
+          <span class="settings-label">最大行数</span>
           <select
             class="select"
             :value="editor.rowsPerPage"
