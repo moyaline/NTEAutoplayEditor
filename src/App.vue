@@ -15,13 +15,31 @@ function toggleSidebar() {
 }
 
 async function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    await document.documentElement.requestFullscreen()
-    await new Promise(r => setTimeout(r, 200))
-    try { await screen.orientation.lock('landscape') } catch {}
-  } else {
-    await document.exitFullscreen()
-    try { screen.orientation.unlock() } catch {}
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen()
+
+      await new Promise<void>((resolve) => {
+        const handler = () => {
+          if (document.fullscreenElement) {
+            document.removeEventListener('fullscreenchange', handler)
+            resolve()
+          }
+        }
+        document.addEventListener('fullscreenchange', handler)
+        setTimeout(resolve, 1000)
+      })
+
+      if (screen.orientation?.lock) {
+        try { screen.orientation.unlock() } catch {}
+        await screen.orientation.lock('landscape').catch(() => {})
+      }
+    } else {
+      try { screen.orientation?.unlock() } catch {}
+      await document.exitFullscreen()
+    }
+  } catch (err) {
+    console.error('全屏切换异常:', err)
   }
 }
 
@@ -75,6 +93,22 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
     </main>
 
     <AppFooter />
+
+    <!-- 未保存确认对话框 -->
+    <div
+      v-if="editor.showSaveDialog"
+      class="save-dialog-overlay"
+      @click="editor.cancelAction()"
+    >
+      <div class="save-dialog-card" @click.stop>
+        <p class="save-dialog-text">当前乐谱已修改，是否保存？</p>
+        <div class="save-dialog-actions">
+          <button class="save-btn save-btn--primary" @click="editor.saveAndProceed()">保存</button>
+          <button class="save-btn save-btn--secondary" @click="editor.discardAndProceed()">不保存</button>
+          <button class="save-btn save-btn--ghost" @click="editor.cancelAction()">取消</button>
+        </div>
+      </div>
+    </div>
 
     <!-- 移动端竖屏提示 -->
     <div class="rotate-hint">
@@ -178,5 +212,65 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   .rotate-hint {
     display: flex;
   }
+}
+
+/* ─── 未保存确认对话框 ─── */
+.save-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.save-dialog-card {
+  min-width: 280px;
+  max-width: 360px;
+  background: var(--color-card-bg, #fff);
+  border: 1px solid var(--color-border-base, #e2e8f0);
+  border-radius: 12px;
+  padding: 24px 20px 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.save-dialog-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-main, #1a2a3a);
+  margin: 0 0 18px;
+  text-align: center;
+}
+
+.save-dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.save-btn {
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.12s;
+}
+.save-btn:hover { opacity: 0.85; }
+
+.save-btn--primary {
+  background: var(--color-primary-500, #0096b7);
+  color: #fff;
+  border-color: var(--color-primary-500, #0096b7);
+}
+
+.save-btn--secondary,
+.save-btn--ghost {
+  background: transparent;
+  color: var(--color-text-secondary, #5a6b7a);
+  border-color: var(--color-border-base, #e2e8f0);
 }
 </style>

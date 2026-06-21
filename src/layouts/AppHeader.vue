@@ -13,11 +13,11 @@ const editor = useEditorStore()
 const fileInput = ref<HTMLInputElement | null>(null)
 
 function handleNew() {
-  editor.newSheet()
+  editor.confirmSaveBefore(() => editor.newSheet())
 }
 
 function handleOpen() {
-  fileInput.value?.click()
+  editor.confirmSaveBefore(() => fileInput.value?.click())
 }
 
 function handleFileChange(event: Event) {

@@ -25,10 +25,57 @@ export const useEditorStore = defineStore('editor', () => {
   const defaultRows = typeof window !== 'undefined' && window.innerHeight <= 500 ? 1 : 2
   const rowsPerPage = ref(load('rowsPerPage', defaultRows))
 
-  // ─── 持久化：设置变化时自动写入 localStorage ──
+  // ─── 持久化 ──
   watch(soundEnabled, v => save('soundEnabled', v))
   watch(soundVolume, v => save('soundVolume', v))
   watch(rowsPerPage, v => save('rowsPerPage', v))
+
+  // ─── 编辑状态 ──
+  const isDirty = ref(false)
+  const showSaveDialog = ref(false)
+  let pendingAction: (() => void) | null = null
+
+  function markDirty() { isDirty.value = true }
+
+  function confirmSaveBefore(action: () => void) {
+    if (isDirty.value) {
+      pendingAction = action
+      showSaveDialog.value = true
+    } else {
+      action()
+    }
+  }
+
+  function saveAndProceed() {
+    downloadSheet()
+    showSaveDialog.value = false
+    const action = pendingAction
+    pendingAction = null
+    action?.()
+  }
+
+  function discardAndProceed() {
+    showSaveDialog.value = false
+    const action = pendingAction
+    pendingAction = null
+    action?.()
+  }
+
+  function cancelAction() {
+    showSaveDialog.value = false
+    pendingAction = null
+  }
+
+  function downloadSheet() {
+    const json = exportSheet()
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${fileName.value || '未命名乐谱'}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   // 播放状态
   const isPlaying = ref(false)
@@ -171,6 +218,7 @@ export const useEditorStore = defineStore('editor', () => {
       beat.keys.push(keyId)
     }
     sheetData.value = { ...sheetData.value }
+    markDirty()
   }
 
   function addBeat() {
@@ -178,6 +226,7 @@ export const useEditorStore = defineStore('editor', () => {
       ...sheetData.value,
       beats: addEmptyBeat(sheetData.value.beats),
     }
+    markDirty()
   }
 
   /** 更新当前 Beat 的 nvr */
@@ -190,9 +239,9 @@ export const useEditorStore = defineStore('editor', () => {
     beat.num = r.num
     beat.den = r.den
     beat.nvr = r.num / r.den
-    // 重算所有 beat 的 cumulative 和 label
     recalcAllLabels()
     sheetData.value = { ...sheetData.value }
+    markDirty()
   }
 
   /** nvr 减半（分母 ×2，分母上限 32 时改为分子 ÷2） */
@@ -230,6 +279,7 @@ export const useEditorStore = defineStore('editor', () => {
       sheetData.value = sheet
       selectedBeatIndex.value = 0
       isNewFile.value = false
+      isDirty.value = false
       stopPlay()
     } catch (e) {
       console.error('乐谱解析失败:', e)
@@ -242,12 +292,14 @@ export const useEditorStore = defineStore('editor', () => {
     selectedBeatIndex.value = 0
     isNewFile.value = true
     fileName.value = '未命名乐谱'
+    isDirty.value = false
     stopPlay()
   }
 
   /** 更新 BPM */
   function setBpm(val: number) {
     sheetData.value = { ...sheetData.value, bpm: Math.max(20, Math.min(300, val)) }
+    markDirty()
   }
 
   /** 导出乐谱为 JSON 字符串 */
@@ -275,6 +327,8 @@ export const useEditorStore = defineStore('editor', () => {
     soundVolume,
     rowsPerPage,
     isPlaying,
+    isDirty,
+    showSaveDialog,
     selectBeat,
     firstBeat,
     prevBeat,
@@ -292,5 +346,9 @@ export const useEditorStore = defineStore('editor', () => {
     newSheet,
     setBpm,
     exportSheet,
+    confirmSaveBefore,
+    saveAndProceed,
+    discardAndProceed,
+    cancelAction,
   }
 })
