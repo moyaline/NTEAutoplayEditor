@@ -5,14 +5,20 @@ import { useEditorStore } from '@/stores/editor'
 import AppHeader from '@/layouts/AppHeader.vue'
 import AppSidebar from '@/layouts/AppSidebar.vue'
 import AppFooter from '@/layouts/AppFooter.vue'
+import SettingsView from '@/views/SettingsView.vue'
 
 const router = useRouter()
 const editor = useEditorStore()
 const sidebarOpen = ref(window.innerHeight > 500)
 const isFullscreen = ref(!!document.fullscreenElement)
+const showSettings = ref(false)
 
 function toggleSidebar() {
     sidebarOpen.value = !sidebarOpen.value
+}
+
+function toggleSettings() {
+    showSettings.value = !showSettings.value
 }
 
 /** 锁定横屏（静默失败） */
@@ -63,7 +69,7 @@ function onOrientationChange() {
 }
 
 function handleKeydown(e: KeyboardEvent) {
-    if (router.currentRoute.value.path !== '/') return
+    if (router.currentRoute.value.path !== '/' || showSettings.value) return
     if ((e.target as HTMLElement)?.tagName === 'INPUT') return
 
     const ctrl = e.ctrlKey || e.metaKey
@@ -109,7 +115,11 @@ onUnmounted(() => {
 
 <template>
     <div class="app-layout">
-        <AppHeader @toggle-sidebar="toggleSidebar" @toggle-fullscreen="toggleFullscreen" />
+        <AppHeader
+            @toggle-sidebar="toggleSidebar"
+            @toggle-fullscreen="toggleFullscreen"
+            @toggle-settings="toggleSettings"
+        />
 
         <!-- 遮罩（仅移动端可见） -->
         <div v-if="sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false"></div>
@@ -122,6 +132,13 @@ onUnmounted(() => {
         </main>
 
         <AppFooter />
+
+        <!-- 设置浮层 -->
+        <div v-if="showSettings" class="settings-overlay" @click="showSettings = false">
+            <div class="settings-container" @click.stop>
+                <SettingsView @close="showSettings = false" />
+            </div>
+        </div>
 
         <!-- 未保存确认对话框 -->
         <div v-if="editor.showSaveDialog" class="save-dialog-overlay" @click="editor.cancelAction()">
@@ -311,5 +328,31 @@ onUnmounted(() => {
     background: transparent;
     color: var(--color-text-secondary, #5a6b7a);
     border-color: var(--color-border-base, #e2e8f0);
+}
+
+/* ─── 设置浮层 ─── */
+.settings-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+}
+
+.settings-container {
+    width: 90vw;
+    max-width: 560px;
+    height: 80vh;
+    max-height: 600px;
+    background: var(--color-page-bg, #f8fafc);
+    border: 1px solid var(--color-border-base, #e2e8f0);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 </style>

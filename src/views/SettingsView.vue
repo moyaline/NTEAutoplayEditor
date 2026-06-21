@@ -6,14 +6,14 @@
  *   - 按键音开关
  *   - 按键音音量（开关关闭时不可用）
  *   - Sheet 最大行数（1–4，实际行数由可用高度决定）
+ *   - 播放时跟随：关闭后用户选择 Beat 不影响播放
  */
 
 import { useEditorStore } from '@/stores/editor'
 import { setSoundEnabled } from '@/utils/notePlayer'
-import { useRouter } from 'vue-router'
 
+const emit = defineEmits<{ close: [] }>()
 const editor = useEditorStore()
-const router = useRouter()
 
 function onSoundToggle(val: boolean) {
   editor.soundEnabled = val
@@ -27,7 +27,7 @@ const rowOptions = [1, 2, 3, 4]
   <div class="settings-view">
     <!-- 标题栏 -->
     <header class="settings-header">
-      <button class="settings-back" title="返回编辑器" @click="router.push('/')">
+      <button class="settings-back" title="关闭设置" @click="emit('close')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="15 18 9 12 15 6" />
         </svg>
@@ -88,6 +88,17 @@ const rowOptions = [1, 2, 3, 4]
               :value="n"
             >{{ n }} 行</option>
           </select>
+        </label>
+
+        <label class="settings-row">
+          <span class="settings-label">播放时跟随</span>
+          <button
+            class="toggle"
+            :class="{ 'toggle--on': editor.playFollow }"
+            @click="editor.playFollow = !editor.playFollow"
+          >
+            <span class="toggle-knob"></span>
+          </button>
         </label>
       </section>
 

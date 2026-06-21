@@ -39,7 +39,15 @@ watch(() => editor.rowsPerPage, recalcRows)
 // 选中 Beat 变化时自动翻到对应页
 watch(() => editor.selectedBeatIndex, (idx) => {
   if (idx !== null) {
-    sheetsRef.value?.goToBeat(idx)
+    const flipped = sheetsRef.value?.goToBeat(idx)
+    if (flipped) editor.forceClearFading()
+  }
+})
+
+// 播放开始时翻到选中 Beat 所在页
+watch(() => editor.isPlaying, (playing) => {
+  if (playing && editor.selectedBeatIndex !== null) {
+    sheetsRef.value?.goToBeat(editor.selectedBeatIndex!)
   }
 })
 </script>
@@ -53,6 +61,9 @@ watch(() => editor.selectedBeatIndex, (idx) => {
         :beats="editor.beats"
         :selected-index="editor.selectedBeatIndex ?? undefined"
         :rows-per-page="dynamicRows"
+        :playing-beat-index="editor.playingBeatIndex"
+        :playing-progress="editor.playingProgress"
+        :fading-beat-indices="editor.fadingBeatIndices"
         @select="editor.selectBeat"
         @add-beat="editor.addBeat"
       />

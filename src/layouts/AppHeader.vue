@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useEditorStore } from '@/stores/editor'
 
 const emit = defineEmits<{
   'toggle-sidebar': []
   'toggle-fullscreen': []
+  'toggle-settings': []
 }>()
 
-const router = useRouter()
 const editor = useEditorStore()
 const fileInput = ref<HTMLInputElement | null>(null)
 
@@ -126,7 +125,7 @@ function handleSave() {
       <button
         class="inline-flex items-center rounded-md p-2 text-(--color-text-secondary) hover:bg-(--color-border-base) transition-all"
         title="设置"
-        @click="router.push('/settings')"
+        @click="emit('toggle-settings')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" />
@@ -135,7 +134,7 @@ function handleSave() {
       </button>
       <span class="h-5 w-px bg-(--color-border-base)"></span>
       <div class="about-trigger">
-        <span class="text-xs text-(--color-text-secondary) cursor-pointer">v0.1.0</span>
+        <span class="text-xs text-(--color-text-secondary) cursor-pointer">v0.1.1</span>
 
         <!-- About 浮窗 -->
         <div class="about-popup">

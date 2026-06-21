@@ -18,6 +18,9 @@ const props = withDefaults(
     beats: BeatData[]
     selectedIndex?: number
     rowsPerPage?: number
+    playingBeatIndex?: number | null
+    playingProgress?: number
+    fadingBeatIndices?: number[]
   }>(),
   { rowsPerPage: 2 },
 )
@@ -109,9 +112,12 @@ function nextPage() {
   if (currentPage.value < totalPages.value - 1) currentPage.value++
 }
 
-function goToBeat(index: number) {
+function goToBeat(index: number): boolean {
   const page = Math.floor(index / slotsPerPage.value)
-  currentPage.value = Math.min(page, totalPages.value - 1)
+  const newPage = Math.min(page, totalPages.value - 1)
+  const changed = newPage !== currentPage.value
+  currentPage.value = newPage
+  return changed
 }
 
 defineExpose({ goToBeat })
@@ -139,6 +145,7 @@ defineExpose({ goToBeat })
             :active-keys="cell.beat.keys"
             :selected="cell.globalIndex === selectedIndex"
             :label="cell.beat.label"
+            :playing-progress="cell.globalIndex === playingBeatIndex ? playingProgress : fadingBeatIndices?.includes(cell.globalIndex) ? 1 : undefined"
             @click="emit('select', cell.globalIndex)"
           />
                 <button

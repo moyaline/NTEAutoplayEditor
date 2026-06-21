@@ -8,6 +8,7 @@
  * 尺寸由 layouts.ts 中的 BEAT 常量控制，修改常量即可全局调试。
  */
 
+import { computed } from 'vue'
 import { BEAT, BEAT_MOBILE } from '@/utils/layout'
 
 const NOTES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'] as const
@@ -32,7 +33,12 @@ const props = defineProps<{
   selected?: boolean
   /** 显示编号标签 */
   label?: string
+  /** 播放进度 0‑1（仅当前播放的 Beat 传入） */
+  playingProgress?: number
 }>()
+
+/** 进度条宽度：有值时跟随进度，无值为 0（v-if 移除前由 Transition 驱动渐隐） */
+const progressWidth = computed(() => props.playingProgress !== undefined ? props.playingProgress * 100 + '%' : '0%')
 
 defineEmits<{
   click: []
@@ -50,6 +56,14 @@ function isActive(note: Note, octave: number): boolean {
     @click="$emit('click')"
   >
     <div class="beat-label">{{ label }}</div>
+    <!-- 播放进度条（Transition 提供渐隐离开动画） -->
+    <Transition name="progress">
+      <div
+        v-if="playingProgress !== undefined"
+        class="beat-progress"
+        :style="{ width: progressWidth }"
+      ></div>
+    </Transition>
     <div class="beat-grid">
       <div v-for="row in rows" :key="row.octave" class="beat-row">
         <div
@@ -78,10 +92,30 @@ function isActive(note: Note, octave: number): boolean {
   transition: border-color 0.15s, box-shadow 0.15s;
   flex-shrink: 0;
   user-select: none;
+  position: relative;
+  overflow: hidden;
 
   /* 显式尺寸，与 layout.ts 常量同步 */
   width: v-bind('BEAT.WIDTH + "px"');
   height: v-bind('BEAT.HEIGHT + "px"');
+}
+
+/* ─── 播放进度条（淡蓝全背景） ─── */
+.beat-progress {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 180, 216, 0.08);
+  pointer-events: none;
+  border-radius: inherit;
+  transition: width 0.05s linear;
+}
+
+/* ─── 渐隐离开动画 ─── */
+.progress-leave-active {
+  transition: opacity 0.4s ease;
+}
+.progress-leave-to {
+  opacity: 0;
 }
 
 .beat-view:hover {
