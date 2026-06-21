@@ -9,38 +9,27 @@ import AppFooter from '@/layouts/AppFooter.vue'
 const router = useRouter()
 const editor = useEditorStore()
 const sidebarOpen = ref(window.innerHeight > 500)
+const isFullscreen = ref(!!document.fullscreenElement)
 
 function toggleSidebar() {
   sidebarOpen.value = !sidebarOpen.value
 }
 
+/** 全屏切换（不使用 orientation 锁定——浏览器行为不可靠反而会锁死竖屏） */
 async function toggleFullscreen() {
   try {
     if (!document.fullscreenElement) {
       await document.documentElement.requestFullscreen()
-
-      await new Promise<void>((resolve) => {
-        const handler = () => {
-          if (document.fullscreenElement) {
-            document.removeEventListener('fullscreenchange', handler)
-            resolve()
-          }
-        }
-        document.addEventListener('fullscreenchange', handler)
-        setTimeout(resolve, 1000)
-      })
-
-      if (screen.orientation?.lock) {
-        try { screen.orientation.unlock() } catch {}
-        await screen.orientation.lock('landscape').catch(() => {})
-      }
     } else {
-      try { screen.orientation?.unlock() } catch {}
       await document.exitFullscreen()
     }
   } catch (err) {
     console.error('全屏切换异常:', err)
   }
+}
+
+function onFsChange() {
+  isFullscreen.value = !!document.fullscreenElement
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -67,13 +56,20 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', handleKeydown))
-onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+  document.addEventListener('fullscreenchange', onFsChange)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+  document.removeEventListener('fullscreenchange', onFsChange)
+})
 </script>
 
 <template>
   <div class="app-layout">
     <AppHeader
+      :fullscreen="isFullscreen"
       @toggle-sidebar="toggleSidebar"
       @toggle-fullscreen="toggleFullscreen"
     />
