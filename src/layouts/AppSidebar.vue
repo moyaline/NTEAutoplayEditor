@@ -87,6 +87,12 @@ const totalDuration = computed(() => {
   width: 270px;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.app-sidebar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .sidebar-input {

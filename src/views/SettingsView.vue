@@ -163,7 +163,13 @@ const rowOptions = [1, 2, 3, 4]
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 480px;
+  max-width: 600px;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.settings-body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 /* ─── 分组 ─── */

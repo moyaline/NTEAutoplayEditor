@@ -8,16 +8,22 @@ import AppFooter from '@/layouts/AppFooter.vue'
 
 const router = useRouter()
 const editor = useEditorStore()
-const sidebarOpen = ref(false)
+const sidebarOpen = ref(window.innerWidth >= 768)
 
 function toggleSidebar() {
   sidebarOpen.value = !sidebarOpen.value
 }
 
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen()
+  } else {
+    document.exitFullscreen()
+  }
+}
+
 function handleKeydown(e: KeyboardEvent) {
-  // 只在编辑器页面生效
   if (router.currentRoute.value.path !== '/') return
-  // 输入框中不触发
   if ((e.target as HTMLElement)?.tagName === 'INPUT') return
 
   const ctrl = e.ctrlKey || e.metaKey
@@ -46,26 +52,18 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
 <template>
   <div class="app-layout">
-    <!-- Header -->
-    <AppHeader />
+    <AppHeader
+      @toggle-sidebar="toggleSidebar"
+      @toggle-fullscreen="toggleFullscreen"
+    />
 
-    <!-- 移动端侧边栏遮罩 -->
+    <!-- 遮罩（仅移动端可见） -->
     <div
       v-if="sidebarOpen"
       class="sidebar-overlay"
       @click="sidebarOpen = false"
     ></div>
 
-    <!-- 移动端侧边栏切换按钮 -->
-    <button class="sidebar-toggle" title="切换侧边栏" @click="toggleSidebar">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="3" y1="6" x2="21" y2="6" />
-        <line x1="3" y1="12" x2="21" y2="12" />
-        <line x1="3" y1="18" x2="21" y2="18" />
-      </svg>
-    </button>
-
-    <!-- Main: Sidebar + Content -->
     <main class="app-main flex overflow-hidden">
       <AppSidebar :class="{ 'sidebar--open': sidebarOpen }" />
       <section class="app-content flex-1 overflow-auto bg-(--color-page-bg)">
@@ -73,7 +71,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
       </section>
     </main>
 
-    <!-- Footer -->
     <AppFooter />
 
     <!-- 移动端竖屏提示 -->
@@ -104,30 +101,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   grid-area: main;
 }
 
-/* ─── 移动端侧边栏 ─── */
-.sidebar-toggle {
-  display: none;
-  position: fixed;
-  bottom: 80px;
-  left: 8px;
-  z-index: 40;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--color-border-base, #e2e8f0);
-  border-radius: 8px;
-  background: var(--color-card-bg, #ffffff);
-  color: var(--color-text-secondary, #5a6b7a);
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 0;
-}
-.sidebar-toggle svg {
-  width: 18px;
-  height: 18px;
-}
-
+/* ─── 遮罩（仅移动端） ─── */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -137,10 +111,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 }
 
 @media (max-width: 767px) {
-  .sidebar-toggle {
-    display: flex;
-  }
-
   .sidebar-overlay {
     display: block;
   }
@@ -156,6 +126,20 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
   .app-sidebar.sidebar--open {
     left: 0;
+  }
+}
+
+/* ─── 桌面端侧边栏折叠 ─── */
+@media (min-width: 768px) {
+  .app-sidebar {
+    transition: width 0.25s ease, opacity 0.2s ease;
+    overflow: hidden;
+  }
+  .app-sidebar:not(.sidebar--open) {
+    width: 0 !important;
+    padding: 0;
+    border: none;
+    opacity: 0;
   }
 }
 

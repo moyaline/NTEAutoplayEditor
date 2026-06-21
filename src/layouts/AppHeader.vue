@@ -1,13 +1,12 @@
 <script setup lang="ts">
-/**
- * AppHeader —— 顶栏
- *
- * 打开按钮触发隐藏的 <input type="file"> 读取 .json 乐谱文件。
- */
-
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEditorStore } from '@/stores/editor'
+
+const emit = defineEmits<{
+  'toggle-sidebar': []
+  'toggle-fullscreen': []
+}>()
 
 const router = useRouter()
 const editor = useEditorStore()
@@ -60,8 +59,19 @@ function handleSave() {
   <header
     class="app-header flex h-14 items-center justify-between border-b border-(--color-border-base) bg-(--color-card-bg) px-5"
   >
-    <!-- Left: Logo & Title -->
-    <div class="flex items-center gap-3">
+    <!-- Left: Sidebar toggle + Logo -->
+    <div class="flex items-center gap-2">
+      <button
+        class="sidebar-btn header-icon-btn"
+        title="切换侧边栏"
+        @click="emit('toggle-sidebar')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
       <h1 class="text-sm font-semibold text-(--color-text-main)">NTE Autoplay Editor</h1>
     </div>
 
@@ -102,8 +112,17 @@ function handleSave() {
       </button>
     </div>
 
-    <!-- Right: User / Settings -->
+    <!-- Right: Fullscreen / Settings -->
     <div class="flex items-center gap-2">
+      <button
+        class="header-icon-btn"
+        title="切换全屏"
+        @click="emit('toggle-fullscreen')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+        </svg>
+      </button>
       <button
         class="inline-flex items-center rounded-md p-2 text-(--color-text-secondary) hover:bg-(--color-border-base) transition-all"
         title="设置"
@@ -158,6 +177,28 @@ function handleSave() {
 .app-header button,
 .app-header h1 {
   -webkit-app-region: no-drag;
+}
+
+/* ─── 顶栏图标按钮 ─── */
+.header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary, #5a6b7a);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.header-icon-btn:hover {
+  background: var(--color-border-base, #e2e8f0);
+}
+.header-icon-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* ─── About 浮窗 ─── */
