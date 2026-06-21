@@ -8,9 +8,9 @@
  * 使用 XMLHttpRequest 加载音频数据（不被 adblock 拦截 fetch）。
  */
 
-/** 键 ID → 文件路径 */
+/** 键 ID → 文件路径（使用 BASE_URL 适配 GitHub Pages 子路径） */
 function noteUrl(keyId: string): string {
-  return `/notes/${keyId.replace('#', 's')}.mp3`
+  return `${import.meta.env.BASE_URL}notes/${keyId.replace('#', 's')}.mp3`
 }
 
 const NOTES = ['C4','C#4','D4','Eb4','E4','F4','F#4','G4','G#4','A4','Bb4','B4',
