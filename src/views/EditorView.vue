@@ -92,6 +92,7 @@ watch(() => editor.isPlaying, (playing) => {
         :selected-indices="editor.selectedIndices"
         :is-select-mode="editor.isSelectMode"
         :has-clipboard="editor.clipboard.length > 0"
+        :invalid-beat-indices="editor.invalidBeatIndices"
         :rows-per-page="dynamicRows"
         :playing-beat-index="editor.playingBeatIndex"
         :playing-progress="editor.playingProgress"

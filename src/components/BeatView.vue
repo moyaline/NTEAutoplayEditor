@@ -33,6 +33,8 @@ const props = defineProps<{
   selected?: boolean
   /** 是否在多选集中 */
   multiSelected?: boolean
+  /** 小节时值不正确警告 */
+  invalid?: boolean
   /** 显示编号标签 */
   label?: string
   /** 序号 #n */
@@ -62,6 +64,7 @@ function isActive(note: Note, octave: number): boolean {
     :class="{
       'beat-view--selected': selected,
       'beat-view--multi': multiSelected && !selected,
+      'beat-view--invalid': invalid,
     }"
     @click="$emit('click', $event)"
     @contextmenu.prevent="$emit('contextmenu', $event)"
@@ -145,6 +148,16 @@ function isActive(note: Note, octave: number): boolean {
 .beat-view--multi {
   border-color: var(--color-primary-300, #48cae4);
   box-shadow: 0 0 0 2px rgba(72, 202, 228, 0.2);
+}
+
+/* ─── 小节时值警告（深黄色 label） ─── */
+.beat-view--invalid .beat-label {
+  color: #ccbb11 !important;
+  font-weight: 700;
+}
+
+.dark .beat-view--invalid .beat-label {
+  color: #eeee55 !important;
 }
 
 /* ─── 序号 #n（左上角小字灰色） ─── */

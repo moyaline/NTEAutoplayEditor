@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useEditorStore } from '@/stores/editor'
 import { cumulativeToLabel } from '@/utils/sheetParser'
 
@@ -22,6 +22,41 @@ const totalDuration = computed(() => {
   if (!last) return '0'
   return cumulativeToLabel(last.cumulative + last.nvr)
 })
+
+// ─── BPM 编辑（延迟到 blur 才提交，避免输入时被钳制） ──
+const bpmInput = ref(String(editor.bpm))
+watch(() => editor.bpm, (v) => { bpmInput.value = String(v) })
+
+function commitBpm() {
+  const val = Math.max(20, Math.min(300, parseInt(bpmInput.value) || 120))
+  editor.setBpm(val)
+  bpmInput.value = String(val)
+}
+
+// ─── 拍号编辑 ──
+const tsNumInput = ref(String(editor.tsNum))
+const tsDenInput = ref(String(editor.tsDen))
+
+function syncTs() {
+  tsNumInput.value = String(editor.tsNum)
+  tsDenInput.value = String(editor.tsDen)
+}
+watch(() => editor.tsNum, syncTs, { immediate: true })
+watch(() => editor.tsDen, syncTs, { immediate: true })
+
+function commitTsNum() {
+  const num = Math.max(1, parseInt(tsNumInput.value) || 4)
+  const den = Math.max(1, Math.min(32, parseInt(tsDenInput.value) || 4))
+  editor.setTimeSignature(num, den)
+  syncTs()
+}
+
+function commitTsDen() {
+  const num = Math.max(1, parseInt(tsNumInput.value) || 4)
+  const den = Math.max(1, Math.min(32, parseInt(tsDenInput.value) || 4))
+  editor.setTimeSignature(num, den)
+  syncTs()
+}
 </script>
 
 <template>
@@ -46,11 +81,32 @@ const totalDuration = computed(() => {
         <input
           class="sidebar-input sidebar-input--mono"
           type="number"
-          min="20"
-          max="300"
-          :value="editor.bpm"
-          @input="editor.setBpm(parseInt(($event.target as HTMLInputElement).value) || 120)"
+          min="20" max="300"
+          v-model="bpmInput"
+          @blur="commitBpm"
+          @keydown.enter="($event.target as HTMLInputElement).blur()"
         />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm text-(--color-text-secondary)">拍号</label>
+        <div class="flex items-center gap-1">
+          <input
+            class="sidebar-input sidebar-input--mono sidebar-input--narrow"
+            type="number" min="1" max="32"
+            v-model="tsNumInput"
+            @blur="commitTsNum"
+            @keydown.enter="($event.target as HTMLInputElement).blur()"
+          />
+          <span class="text-sm text-(--color-text-placeholder) font-medium">/</span>
+          <input
+            class="sidebar-input sidebar-input--mono sidebar-input--narrow"
+            type="number" min="1" max="32"
+            v-model="tsDenInput"
+            @blur="commitTsDen"
+            @keydown.enter="($event.target as HTMLInputElement).blur()"
+          />
+        </div>
       </div>
     </div>
 
@@ -123,6 +179,11 @@ const totalDuration = computed(() => {
 }
 .sidebar-input[type="number"] {
   -moz-appearance: textfield;
+}
+
+.sidebar-input--narrow {
+  width: 60px;
+  text-align: center;
 }
 
 /* ─── 统计 ─── */

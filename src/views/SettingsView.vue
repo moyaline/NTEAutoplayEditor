@@ -100,17 +100,40 @@ const rowOptions = [1, 2, 3, 4]
             <span class="toggle-knob"></span>
           </button>
         </label>
+
+        <label class="settings-row">
+          <span class="settings-label">末尾自动创建</span>
+          <button
+            class="toggle"
+            :class="{ 'toggle--on': editor.autoCreateBeat }"
+            @click="editor.autoCreateBeat = !editor.autoCreateBeat"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </label>
+
+        <label class="settings-row">
+          <span class="settings-label">小节时值校验</span>
+          <button
+            class="toggle"
+            :class="{ 'toggle--on': editor.showValidityCheck }"
+            @click="editor.showValidityCheck = !editor.showValidityCheck"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </label>
       </section>
 
       <!-- ═══ 快捷键 ═══ -->
       <section class="settings-section">
         <h3 class="section-title">快捷键</h3>
         <div class="shortcuts-list">
-          <div class="shortcut-row"><kbd>←</kbd><span>上一个拍</span></div>
-          <div class="shortcut-row"><kbd>→</kbd><span>下一个拍</span></div>
-          <div class="shortcut-row"><kbd>Ctrl + ←</kbd><span>跳转到第一个拍</span></div>
-          <div class="shortcut-row"><kbd>Ctrl + →</kbd><span>跳转到最后一个拍</span></div>
+          <div class="shortcut-row"><kbd>A</kbd><kbd>←</kbd><span>上一个拍</span></div>
+          <div class="shortcut-row"><kbd>D</kbd><kbd>→</kbd><span>下一个拍</span></div>
+          <div class="shortcut-row"><kbd>Ctrl + A</kbd><kbd>Ctrl + ←</kbd><span>跳转到第一个拍</span></div>
+          <div class="shortcut-row"><kbd>Ctrl + D</kbd><kbd>Ctrl + →</kbd><span>跳转到最后一个拍</span></div>
           <div class="shortcut-row"><kbd>Space</kbd><span>播放 / 暂停</span></div>
+          <div class="shortcut-row"><kbd>Ctrl + N</kbd><span>新建 Beat</span></div>
         </div>
       </section>
     </div>

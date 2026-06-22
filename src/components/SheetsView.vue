@@ -21,6 +21,7 @@ const props = withDefaults(
     selectedIndices?: Set<number>
     isSelectMode?: boolean
     hasClipboard?: boolean
+    invalidBeatIndices?: Set<number>
     rowsPerPage?: number
     playingBeatIndex?: number | null
     playingProgress?: number
@@ -220,6 +221,7 @@ defineExpose({ goToBeat })
             :active-keys="cell.beat.keys"
             :selected="cell.globalIndex === selectedIndex"
             :multi-selected="selectedIndices?.has(cell.globalIndex) && cell.globalIndex !== selectedIndex"
+            :invalid="!!invalidBeatIndices?.has(cell.globalIndex)"
             :label="cell.beat.label"
             :seq-num="cell.globalIndex + 1"
             :playing-progress="cell.globalIndex === playingBeatIndex ? playingProgress : fadingBeatIndices?.includes(cell.globalIndex) ? 1 : undefined"

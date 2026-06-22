@@ -87,16 +87,25 @@ function handleKeydown(e: KeyboardEvent) {
 
     const ctrl = e.ctrlKey || e.metaKey
 
+    // Ctrl 组合键（优先于单键）
     if (ctrl && e.key === 'ArrowLeft') {
         e.preventDefault()
         editor.firstBeat()
     } else if (ctrl && e.key === 'ArrowRight') {
         e.preventDefault()
         editor.lastBeat()
-    } else if (e.key === 'ArrowLeft') {
+    } else if (ctrl && (e.key === 'n' || e.key === 'N')) {
+        // Ctrl+N: 新建 Beat
+        e.preventDefault()
+        editor.addBeat()
+    } else if (ctrl && (e.key === 'a' || e.key === 'A')) {
+        // Ctrl+A: 全选（优先于 A 导航）
+        e.preventDefault()
+        editor.selectAllBeats()
+    } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         e.preventDefault()
         editor.prevBeat()
-    } else if (e.key === 'ArrowRight') {
+    } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
         e.preventDefault()
         editor.nextBeat()
     } else if (e.key === ' ' || e.code === 'Space') {

@@ -7,7 +7,7 @@
 
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { createEmptySheet, addEmptyBeat, parseSheet, cumulativeToLabel, reduceFraction, keyIdToNote } from '@/utils/sheetParser'
+import { createEmptySheet, addEmptyBeat, parseSheet, cumulativeToLabel, reduceFraction, keyIdToNote, beatLabel, measureForCumulative, validateMeasures } from '@/utils/sheetParser'
 import type { BeatData } from '@/utils/sheetParser'
 import type { SheetData } from '@/utils/sheetParser'
 import { playNote } from '@/utils/notePlayer'
@@ -32,11 +32,16 @@ export const useEditorStore = defineStore('editor', () => {
   const rowsPerPage = ref(load('rowsPerPage', defaultRows))
   const playFollow = ref(load('playFollow', true))
 
+  const autoCreateBeat = ref(load('autoCreateBeat', false))
+  const showValidityCheck = ref(load('showValidityCheck', true))
+
   // ─── 持久化 ──
   watch(soundEnabled, v => save('soundEnabled', v))
   watch(soundVolume, v => save('soundVolume', v))
   watch(rowsPerPage, v => save('rowsPerPage', v))
   watch(playFollow, v => save('playFollow', v))
+  watch(autoCreateBeat, v => save('autoCreateBeat', v))
+  watch(showValidityCheck, v => save('showValidityCheck', v))
 
   // ─── 撤销/重做 ──
   const undoStack = ref<UndoEntry[]>([])
@@ -360,6 +365,14 @@ export const useEditorStore = defineStore('editor', () => {
 
   const beats = computed(() => sheetData.value.beats)
   const bpm = computed(() => sheetData.value.bpm)
+  const tsNum = computed(() => sheetData.value.timeSignature?.num ?? 4)
+  const tsDen = computed(() => sheetData.value.timeSignature?.den ?? 4)
+
+  const invalidBeatIndices = computed(() =>
+    showValidityCheck.value
+      ? validateMeasures(beats.value, tsNum.value, tsDen.value)
+      : new Set<number>(),
+  )
 
   const activeKeys = computed(() => {
     if (selectedBeatIndex.value === null) return []
@@ -423,7 +436,14 @@ export const useEditorStore = defineStore('editor', () => {
 
   function nextBeat() {
     if (selectedBeatIndex.value === null) return
-    if (selectedBeatIndex.value >= beats.value.length - 1) return
+    if (selectedBeatIndex.value >= beats.value.length - 1) {
+      if (autoCreateBeat.value) {
+        const idx = beats.value.length
+        addBeat()
+        selectedBeatIndex.value = idx
+      }
+      return
+    }
     selectBeat(selectedBeatIndex.value + 1)
   }
 
@@ -555,9 +575,10 @@ export const useEditorStore = defineStore('editor', () => {
 
   function addBeat() {
     pushSnapshot()
+    const { num: tn, den: td } = sheetData.value.timeSignature ?? { num: 4, den: 4 }
     sheetData.value = {
       ...sheetData.value,
-      beats: addEmptyBeat(sheetData.value.beats),
+      beats: addEmptyBeat(sheetData.value.beats, tn, td),
     }
     // 自动选中新增的 beat
     selectedBeatIndex.value = beats.value.length - 1
@@ -599,9 +620,12 @@ export const useEditorStore = defineStore('editor', () => {
   /** 重算所有 beat 的 cumulative 和 label */
   function recalcAllLabels() {
     let cum = 0
-    for (const beat of beats.value) {
+    const { num: tn, den: td } = sheetData.value.timeSignature ?? { num: 4, den: 4 }
+    for (let i = 0; i < beats.value.length; i++) {
+      const beat = beats.value[i]!
       beat.cumulative = cum
-      beat.label = cumulativeToLabel(cum + beat.nvr)
+      const measure = measureForCumulative(cum, tn, td)
+      beat.label = beatLabel(beat.num, beat.den, measure)
       cum += beat.nvr
     }
   }
@@ -643,6 +667,17 @@ export const useEditorStore = defineStore('editor', () => {
     markDirty()
   }
 
+  /** 更新拍号（不约分，拍号有音乐意义） */
+  function setTimeSignature(num: number, den: number) {
+    pushSnapshot()
+    sheetData.value = {
+      ...sheetData.value,
+      timeSignature: { num: Math.max(1, Math.min(32, num)), den: Math.max(1, Math.min(32, den)) },
+    }
+    recalcAllLabels()
+    markDirty()
+  }
+
   /** 导出乐谱为 JSON 字符串 */
   function exportSheet(): string {
     const beatLines = sheetData.value.beats.map(b => {
@@ -651,7 +686,8 @@ export const useEditorStore = defineStore('editor', () => {
         : b.keys.map(k => keyIdToNote(k))
       return `    {"note": ${JSON.stringify(notes)}, "nvr": {"num": ${b.num}, "den": ${b.den}}}`
     })
-    return `{\n  "bpm": ${sheetData.value.bpm},\n  "sheet": [\n${beatLines.join(',\n')}\n  ]\n}`
+    const ts = sheetData.value.timeSignature ?? { num: 4, den: 4 }
+    return `{\n  "bpm": ${sheetData.value.bpm},\n  "timeSignature": {"num": ${ts.num}, "den": ${ts.den}},\n  "sheet": [\n${beatLines.join(',\n')}\n  ]\n}`
   }
 
   return {
@@ -665,12 +701,17 @@ export const useEditorStore = defineStore('editor', () => {
     isNewFile,
     beats,
     bpm,
+    tsNum,
+    tsDen,
     activeKeys,
     currentNvr,
     soundEnabled,
     soundVolume,
     rowsPerPage,
     playFollow,
+    autoCreateBeat,
+    showValidityCheck,
+    invalidBeatIndices,
     isPlaying,
     playingBeatIndex,
     playingProgress,
@@ -694,6 +735,7 @@ export const useEditorStore = defineStore('editor', () => {
     loadSheet,
     newSheet,
     setBpm,
+    setTimeSignature,
     exportSheet,
     confirmSaveBefore,
     saveAndProceed,
