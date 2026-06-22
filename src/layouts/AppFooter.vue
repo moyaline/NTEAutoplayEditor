@@ -7,11 +7,28 @@
  * 右: 时值编辑（− [num/den] +）
  */
 
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useEditorStore } from '@/stores/editor'
 import { loadProgress } from '@/utils/notePlayer'
 
 const editor = useEditorStore()
+
+// ─── 多选状态 ──
+const selectionInfo = computed(() => {
+  const size = editor.selectedIndices.size
+  if (size === 0) return null
+  const sorted = Array.from(editor.selectedIndices).sort((a, b) => a - b)
+  const start = sorted[0]
+  const end = sorted[sorted.length - 1]
+
+  if (start == undefined || end == undefined) return null;
+  
+  // 判断是否连续
+  const isConsecutive = (end - start + 1) === size
+  if (size === 1) return `已选 #${start + 1}`
+  if (isConsecutive) return `已选 #${start + 1}-#${end + 1}`
+  return `已选 ${size} 拍`
+})
 
 // ─── nvr 编辑 ────────────────────────────
 const numInput = ref('1')
@@ -57,8 +74,9 @@ watch(() => loadProgress.value.loaded, (val) => {
 
 <template>
   <footer class="app-footer">
-    <!-- 左侧：音频加载状态 -->
+    <!-- 左侧：多选信息 + 音频加载状态 -->
     <div class="footer-left">
+      <span v-if="selectionInfo" class="selection-status">{{ selectionInfo }}</span>
       <span v-if="loadProgress.loaded < loadProgress.total" class="audio-status">
         音频加载 {{ loadProgress.loaded }}/{{ loadProgress.total }}
       </span>
@@ -145,6 +163,13 @@ watch(() => loadProgress.value.loaded, (val) => {
   align-items: center;
 }
 
+.selection-status {
+  font-size: 12px;
+  color: var(--color-primary-500, #0096b7);
+  font-weight: 600;
+  white-space: nowrap;
+  margin-right: 8px;
+}
 .audio-status {
   font-size: 12px;
   color: var(--color-text-placeholder, #a0b0c0);

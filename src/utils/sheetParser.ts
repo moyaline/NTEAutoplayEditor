@@ -63,6 +63,38 @@ const PREFIX_OCTAVE: Record<string, number> = {
   L: 4,
 }
 
+/** 八度 → 前缀 */
+const OCTAVE_PREFIX: Record<number, string> = {
+  4: 'L',
+  5: '',
+  6: 'H',
+}
+
+/** note 名反向映射（KeyPad key → JSON note） */
+const REVERSE_NOTE_MAP: Record<string, string> = {
+  C: 'C', 'C#': 'Cs', D: 'D', Eb: 'Eb', E: 'E',
+  F: 'F', 'F#': 'Fs', G: 'G', 'G#': 'Gs', A: 'A',
+  Bb: 'Bb', B: 'B',
+}
+
+const NOTE_NAMES = ['C#', 'Eb', 'F#', 'G#', 'Bb', 'C', 'D', 'E', 'F', 'G', 'A', 'B']
+
+/**
+ * 将 KeyPad keyId 转回 JSON note 字符串
+ * 例: "C#6" → "HCs", "Eb5" → "Eb", "F4" → "LF"
+ */
+export function keyIdToNote(keyId: string): string {
+  for (const name of NOTE_NAMES) {
+    if (keyId.startsWith(name)) {
+      const octaveStr = keyId.slice(name.length)
+      const octave = parseInt(octaveStr, 10)
+      const prefix = OCTAVE_PREFIX[octave] ?? ''
+      return `${prefix}${REVERSE_NOTE_MAP[name]!}`
+    }
+  }
+  return keyId
+}
+
 /**
  * 将 JSON note 字符串转为 KeyPad keyId
  * 例: "HCs" → "C#6", "Eb" → "Eb5", "LF" → "F4"

@@ -29,10 +29,14 @@ const rows: OctaveRow[] = [
 const props = defineProps<{
   /** 该拍激活的按键 ID 数组，如 ["C5", "C#6"] */
   activeKeys?: string[]
-  /** 是否选中 */
+  /** 是否选中（主选中） */
   selected?: boolean
+  /** 是否在多选集中 */
+  multiSelected?: boolean
   /** 显示编号标签 */
   label?: string
+  /** 序号 #n */
+  seqNum?: number
   /** 播放进度 0‑1（仅当前播放的 Beat 传入） */
   playingProgress?: number
 }>()
@@ -41,7 +45,10 @@ const props = defineProps<{
 const progressWidth = computed(() => props.playingProgress !== undefined ? props.playingProgress * 100 + '%' : '0%')
 
 defineEmits<{
-  click: []
+  click: [e: MouseEvent]
+  contextmenu: [e: MouseEvent]
+  touchstart: [e: TouchEvent]
+  touchend: [e: TouchEvent]
 }>()
 
 function isActive(note: Note, octave: number): boolean {
@@ -52,9 +59,17 @@ function isActive(note: Note, octave: number): boolean {
 <template>
   <div
     class="beat-view"
-    :class="{ 'beat-view--selected': selected }"
-    @click="$emit('click')"
+    :class="{
+      'beat-view--selected': selected,
+      'beat-view--multi': multiSelected && !selected,
+    }"
+    @click="$emit('click', $event)"
+    @contextmenu.prevent="$emit('contextmenu', $event)"
+    @touchstart="$emit('touchstart', $event)"
+    @touchend="$emit('touchend', $event)"
   >
+    <!-- 序号 #n -->
+    <span class="beat-seq">#{{ seqNum }}</span>
     <div class="beat-label">{{ label }}</div>
     <!-- 播放进度条（Transition 提供渐隐离开动画） -->
     <Transition name="progress">
@@ -127,6 +142,24 @@ function isActive(note: Note, octave: number): boolean {
   box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.2);
 }
 
+.beat-view--multi {
+  border-color: var(--color-primary-300, #48cae4);
+  box-shadow: 0 0 0 2px rgba(72, 202, 228, 0.2);
+}
+
+/* ─── 序号 #n（左上角小字灰色） ─── */
+.beat-seq {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--color-text-placeholder, #a0b0c0);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* ─── 编号 ─── */
 .beat-label {
   font-size: v-bind('BEAT.LABEL_FONT_SIZE + "px"');
@@ -181,6 +214,11 @@ function isActive(note: Note, octave: number): boolean {
   .beat-view {
     padding: v-bind('BEAT_MOBILE.PADDING_Y + "px"') v-bind('BEAT_MOBILE.PADDING_X + "px"');
     border-width: v-bind('BEAT_MOBILE.BORDER + "px"');
+  }
+  .beat-seq {
+    font-size: 8px;
+    top: 1px;
+    left: 2px;
   }
   .beat-label {
     font-size: v-bind('BEAT_MOBILE.LABEL_FONT_SIZE + "px"');

@@ -68,6 +68,19 @@ function onOrientationChange() {
     }
 }
 
+/** Shift / Ctrl 按下时记录锚点（固定不变直到按键释放） */
+function handleKeydownMod(e: KeyboardEvent) {
+    if (e.key === 'Shift') {
+        editor.setShiftAnchor(editor.selectedBeatIndex)
+    } else if (e.key === 'Control' || e.key === 'Meta') {
+        editor.setCtrlAnchor(editor.selectedBeatIndex)
+    }
+}
+
+function handleKeyup(e: KeyboardEvent) {
+    // 不做清理，下次 keydown 会覆盖锚点
+}
+
 function handleKeydown(e: KeyboardEvent) {
     if (router.currentRoute.value.path !== '/' || showSettings.value) return
     if ((e.target as HTMLElement)?.tagName === 'INPUT') return
@@ -89,11 +102,57 @@ function handleKeydown(e: KeyboardEvent) {
     } else if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault()
         editor.togglePlay()
+    } else if (ctrl && (e.key === 'a' || e.key === 'A')) {
+        // Ctrl+A: 全选
+        e.preventDefault()
+        editor.selectAllBeats()
+    } else if (ctrl && (e.key === 'c' || e.key === 'C')) {
+        // Ctrl+C: 复制（优先多选，否则复制主选中 beat）
+        if (editor.selectedIndices.size > 0 || editor.selectedBeatIndex !== null) {
+            e.preventDefault()
+            editor.copyBeats()
+        }
+    } else if (ctrl && (e.key === 'x' || e.key === 'X')) {
+        // Ctrl+X: 剪切（优先多选，否则剪切主选中 beat）
+        if (editor.selectedIndices.size > 0 || editor.selectedBeatIndex !== null) {
+            e.preventDefault()
+            editor.cutBeats()
+            if (editor.beats.length > 0) editor.selectedBeatIndex = 0
+        }
+    } else if (ctrl && (e.key === 'v' || e.key === 'V')) {
+        // Ctrl+V: 粘贴到当前选中 beat 后
+        if (editor.clipboard.length > 0 && editor.selectedBeatIndex !== null) {
+            e.preventDefault()
+            editor.pasteBeatsAfter(editor.selectedBeatIndex)
+            // 选中新粘贴的 beat
+            const newIdx = editor.selectedBeatIndex + 1
+            editor.selectedBeatIndex = newIdx
+        }
+    } else if (ctrl && (e.key === 'z' || e.key === 'Z')) {
+        // Ctrl+Z: 撤销, Ctrl+Shift+Z: 重做
+        e.preventDefault()
+        if (e.shiftKey) {
+            editor.redo()
+        } else {
+            editor.undo()
+        }
+    } else if (ctrl && (e.key === 'y' || e.key === 'Y')) {
+        // Ctrl+Y: 重做
+        e.preventDefault()
+        editor.redo()
+    } else if (e.key === 'Delete' || e.key === 'Del') {
+        // Delete: 删除选中 beat
+        if (editor.selectedIndices.size > 0 || editor.selectedBeatIndex !== null) {
+            e.preventDefault()
+            editor.deleteSelectedBeats()
+        }
     }
 }
 
 onMounted(() => {
     window.addEventListener('keydown', handleKeydown)
+    window.addEventListener('keydown', handleKeydownMod)
+    window.addEventListener('keyup', handleKeyup)
     document.addEventListener('fullscreenchange', onFsChange)
     if (screen.orientation) {
         screen.orientation.addEventListener('change', onOrientationChange)
@@ -104,6 +163,8 @@ onMounted(() => {
 
 onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown)
+    window.removeEventListener('keydown', handleKeydownMod)
+    window.removeEventListener('keyup', handleKeyup)
     document.removeEventListener('fullscreenchange', onFsChange)
     if (screen.orientation) {
         screen.orientation.removeEventListener('change', onOrientationChange)

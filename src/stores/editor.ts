@@ -7,10 +7,16 @@
 
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { createEmptySheet, addEmptyBeat, parseSheet, cumulativeToLabel, reduceFraction } from '@/utils/sheetParser'
+import { createEmptySheet, addEmptyBeat, parseSheet, cumulativeToLabel, reduceFraction, keyIdToNote } from '@/utils/sheetParser'
+import type { BeatData } from '@/utils/sheetParser'
 import type { SheetData } from '@/utils/sheetParser'
 import { playNote } from '@/utils/notePlayer'
 import { load, save } from '@/utils/storage'
+
+interface UndoEntry {
+  sheetData: SheetData
+  selectedBeatIndex: number | null
+}
 
 export const useEditorStore = defineStore('editor', () => {
   // ─── 状态（从 localStorage 初始化） ──────
@@ -31,6 +37,206 @@ export const useEditorStore = defineStore('editor', () => {
   watch(soundVolume, v => save('soundVolume', v))
   watch(rowsPerPage, v => save('rowsPerPage', v))
   watch(playFollow, v => save('playFollow', v))
+
+  // ─── 撤销/重做 ──
+  const undoStack = ref<UndoEntry[]>([])
+  const redoStack = ref<UndoEntry[]>([])
+  const MAX_UNDO = 200
+
+  function cloneSheet(): SheetData {
+    return JSON.parse(JSON.stringify(sheetData.value))
+  }
+
+  function pushSnapshot() {
+    undoStack.value.push({
+      sheetData: cloneSheet(),
+      selectedBeatIndex: selectedBeatIndex.value,
+    })
+    if (undoStack.value.length > MAX_UNDO) undoStack.value.shift()
+    redoStack.value = []
+  }
+
+  function undo() {
+    if (undoStack.value.length === 0) return
+    // 保存当前状态到 redo
+    redoStack.value.push({
+      sheetData: cloneSheet(),
+      selectedBeatIndex: selectedBeatIndex.value,
+    })
+    const entry = undoStack.value.pop()!
+    sheetData.value = entry.sheetData
+    selectedBeatIndex.value = entry.selectedBeatIndex
+    clearMultiSelection()
+    stopPlay()
+    markDirty()
+  }
+
+  function redo() {
+    if (redoStack.value.length === 0) return
+    // 保存当前状态到 undo
+    undoStack.value.push({
+      sheetData: cloneSheet(),
+      selectedBeatIndex: selectedBeatIndex.value,
+    })
+    const entry = redoStack.value.pop()!
+    sheetData.value = entry.sheetData
+    selectedBeatIndex.value = entry.selectedBeatIndex
+    clearMultiSelection()
+    stopPlay()
+    markDirty()
+  }
+
+  // ─── 多选 & 剪贴板 ──
+  const selectedIndices = ref<Set<number>>(new Set())
+  const selectionStartIndex = ref<number | null>(null)
+  const isSelectMode = ref(false)
+  const clipboard = ref<BeatData[]>([])
+  /** Shift/ Ctrl 按下时记录的锚点（固定不变直到按键释放） */
+  const shiftAnchor = ref<number | null>(null)
+  const ctrlAnchor = ref<number | null>(null)
+
+  function setShiftAnchor(idx: number | null) { shiftAnchor.value = idx }
+  function setCtrlAnchor(idx: number | null) { ctrlAnchor.value = idx }
+
+  function toggleMultiSelect(index: number) {
+    const newSet = new Set(selectedIndices.value)
+    if (newSet.has(index)) {
+      newSet.delete(index)
+    } else {
+      newSet.add(index)
+    }
+    selectedIndices.value = newSet
+  }
+
+  function rangeSelectTo(index: number) {
+    if (selectionStartIndex.value === null) return
+    const start = Math.min(selectionStartIndex.value, index)
+    const end = Math.max(selectionStartIndex.value, index)
+    const newSet = new Set<number>()
+    for (let i = start; i <= end; i++) {
+      if (i >= 0 && i < beats.value.length) newSet.add(i)
+    }
+    selectedIndices.value = newSet
+  }
+
+  function selectAllBeats() {
+    const newSet = new Set<number>()
+    for (let i = 0; i < beats.value.length; i++) newSet.add(i)
+    selectedIndices.value = newSet
+  }
+
+  function clearMultiSelection() {
+    selectedIndices.value = new Set()
+    selectionStartIndex.value = null
+    isSelectMode.value = false
+    // 保持 selectedBeatIndex 不变，用以保留最后点选的 beat
+  }
+
+  /** 获取要操作的 beat 索引列表（优先多选，否则用主选中） */
+  function effectiveSelection(): number[] {
+    if (selectedIndices.value.size > 0) {
+      return Array.from(selectedIndices.value).sort((a, b) => a - b)
+    }
+    if (selectedBeatIndex.value !== null) {
+      return [selectedBeatIndex.value]
+    }
+    return []
+  }
+
+  function copyBeats() {
+    const indices = effectiveSelection()
+    if (indices.length === 0) return
+    clipboard.value = indices.map(i => ({
+      ...beats.value[i]!,
+      keys: [...beats.value[i]!.keys],
+      rawNotes: [...beats.value[i]!.rawNotes],
+    }))
+  }
+
+  function cutBeats() {
+    const indices = effectiveSelection()
+    if (indices.length === 0) return
+    pushSnapshot()
+    copyBeats()
+    const sorted = Array.from(indices).sort((a, b) => b - a)
+    const newBeats = [...beats.value]
+    for (const idx of sorted) newBeats.splice(idx, 1)
+    sheetData.value = { ...sheetData.value, beats: newBeats }
+    clearMultiSelection()
+    if (selectedBeatIndex.value !== null && selectedBeatIndex.value >= newBeats.length) {
+      selectedBeatIndex.value = newBeats.length > 0 ? newBeats.length - 1 : null
+    }
+    recalcAllLabels()
+    markDirty()
+  }
+
+  function pasteBeatsAfter(targetIndex: number) {
+    if (clipboard.value.length === 0) return
+    pushSnapshot()
+    const newBeats = [...beats.value]
+    const pasted: BeatData[] = clipboard.value.map(b => ({
+      ...b,
+      keys: [...b.keys],
+      rawNotes: [...b.rawNotes],
+    }))
+    newBeats.splice(targetIndex + 1, 0, ...pasted)
+    sheetData.value = { ...sheetData.value, beats: newBeats }
+    clearMultiSelection()
+    recalcAllLabels()
+    markDirty()
+  }
+
+  function pasteBeatsBefore(targetIndex: number) {
+    if (clipboard.value.length === 0) return
+    pushSnapshot()
+    const newBeats = [...beats.value]
+    const pasted: BeatData[] = clipboard.value.map(b => ({
+      ...b,
+      keys: [...b.keys],
+      rawNotes: [...b.rawNotes],
+    }))
+    newBeats.splice(targetIndex, 0, ...pasted)
+    sheetData.value = { ...sheetData.value, beats: newBeats }
+    clearMultiSelection()
+    recalcAllLabels()
+    markDirty()
+  }
+
+  function isSelected(index: number): boolean {
+    return selectedIndices.value.has(index)
+  }
+
+  function startSelectionFrom(index: number) {
+    isSelectMode.value = true
+    selectionStartIndex.value = index
+    selectedIndices.value = new Set([index])
+    // 更新主选中以清除旧高亮
+    selectedBeatIndex.value = index
+  }
+
+  /** 删除所有选中的 Beat（含主选中） */
+  function deleteSelectedBeats() {
+    // 收集要删除的索引
+    const toDelete = new Set(selectedIndices.value)
+    // 如果没有任何多选但有主选中，删除主选中
+    if (toDelete.size === 0 && selectedBeatIndex.value !== null) {
+      toDelete.add(selectedBeatIndex.value)
+    }
+    if (toDelete.size === 0) return
+    pushSnapshot()
+    const sorted = Array.from(toDelete).sort((a, b) => b - a)
+    const newBeats = [...beats.value]
+    for (const idx of sorted) {
+      if (idx >= 0 && idx < newBeats.length) newBeats.splice(idx, 1)
+    }
+    sheetData.value = { ...sheetData.value, beats: newBeats }
+    clearMultiSelection()
+    if (selectedBeatIndex.value !== null && selectedBeatIndex.value >= newBeats.length) {
+      selectedBeatIndex.value = newBeats.length > 0 ? newBeats.length - 1 : null
+    }
+    recalcAllLabels()
+    markDirty()
+  }
 
   // ─── 编辑状态 ──
   const isDirty = ref(false)
@@ -333,6 +539,7 @@ export const useEditorStore = defineStore('editor', () => {
 
   function toggleNoteKey(keyId: string) {
     if (selectedBeatIndex.value === null) return
+    pushSnapshot()
     const beat = sheetData.value.beats[selectedBeatIndex.value]
     if (!beat) return
 
@@ -347,16 +554,20 @@ export const useEditorStore = defineStore('editor', () => {
   }
 
   function addBeat() {
+    pushSnapshot()
     sheetData.value = {
       ...sheetData.value,
       beats: addEmptyBeat(sheetData.value.beats),
     }
+    // 自动选中新增的 beat
+    selectedBeatIndex.value = beats.value.length - 1
     markDirty()
   }
 
   /** 更新当前 Beat 的 nvr */
   function updateNvr(num: number, den: number) {
     if (selectedBeatIndex.value === null) return
+    pushSnapshot()
     const beat = sheetData.value.beats[selectedBeatIndex.value]
     if (!beat) return
     // 约分
@@ -401,6 +612,8 @@ export const useEditorStore = defineStore('editor', () => {
     try {
       const parsed = JSON.parse(jsonStr)
       const sheet = parseSheet(parsed)
+      undoStack.value = []
+      redoStack.value = []
       sheetData.value = sheet
       selectedBeatIndex.value = 0
       isNewFile.value = false
@@ -413,6 +626,8 @@ export const useEditorStore = defineStore('editor', () => {
   }
 
   function newSheet() {
+    undoStack.value = []
+    redoStack.value = []
     sheetData.value = createEmptySheet()
     selectedBeatIndex.value = 0
     isNewFile.value = true
@@ -423,25 +638,29 @@ export const useEditorStore = defineStore('editor', () => {
 
   /** 更新 BPM */
   function setBpm(val: number) {
+    pushSnapshot()
     sheetData.value = { ...sheetData.value, bpm: Math.max(20, Math.min(300, val)) }
     markDirty()
   }
 
   /** 导出乐谱为 JSON 字符串 */
   function exportSheet(): string {
-    const data = {
-      bpm: sheetData.value.bpm,
-      sheet: sheetData.value.beats.map(b => ({
-        note: b.rawNotes.length > 0 ? b.rawNotes : b.keys.map(k => k),
-        nvr: { num: b.num, den: b.den },
-      })),
-    }
-    return JSON.stringify(data, null, 4)
+    const beatLines = sheetData.value.beats.map(b => {
+      const notes = b.rawNotes.length > 0
+        ? b.rawNotes
+        : b.keys.map(k => keyIdToNote(k))
+      return `    {"note": ${JSON.stringify(notes)}, "nvr": {"num": ${b.num}, "den": ${b.den}}}`
+    })
+    return `{\n  "bpm": ${sheetData.value.bpm},\n  "sheet": [\n${beatLines.join(',\n')}\n  ]\n}`
   }
 
   return {
     sheetData,
     selectedBeatIndex,
+    selectedIndices,
+    selectionStartIndex,
+    isSelectMode,
+    clipboard,
     fileName,
     isNewFile,
     beats,
@@ -480,5 +699,22 @@ export const useEditorStore = defineStore('editor', () => {
     saveAndProceed,
     discardAndProceed,
     cancelAction,
+    toggleMultiSelect,
+    rangeSelectTo,
+    selectAllBeats,
+    clearMultiSelection,
+    copyBeats,
+    cutBeats,
+    pasteBeatsAfter,
+    pasteBeatsBefore,
+    isSelected,
+    startSelectionFrom,
+    deleteSelectedBeats,
+    undo,
+    redo,
+    shiftAnchor,
+    ctrlAnchor,
+    setShiftAnchor,
+    setCtrlAnchor,
   }
 })

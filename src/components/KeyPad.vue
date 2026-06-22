@@ -13,6 +13,7 @@ const props = defineProps<{
   activeKeys?: string[]
   soundEnabled?: boolean
   soundVolume?: number
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -25,6 +26,7 @@ watch(() => props.soundVolume, (v) => {
 }, { immediate: true })
 
 function handleKeyClick(keyId: string) {
+  if (props.disabled) return
   if (props.soundEnabled !== false) {
     playNote(keyId)
   }
@@ -32,6 +34,7 @@ function handleKeyClick(keyId: string) {
 }
 
 function onTouchStart(e: TouchEvent, keyId: string) {
+  if (props.disabled) return
   // 阻止默认行为，避免页面滚动或缩放干扰多点
   e.preventDefault()
   handleKeyClick(keyId)
@@ -58,7 +61,7 @@ function keyId(note: Note, octave: number): string {
 </script>
 
 <template>
-  <div class="keypad">
+  <div class="keypad" :class="{ 'keypad--disabled': disabled }">
     <div
       v-for="row in rows"
       :key="row.octave"
@@ -96,6 +99,11 @@ function keyId(note: Note, octave: number): string {
   gap: 13px;
   padding: 20px 25px;
   user-select: none;
+}
+
+.keypad--disabled {
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 /* ─── Row ─── */

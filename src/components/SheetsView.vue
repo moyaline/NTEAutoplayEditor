@@ -10,6 +10,7 @@
 
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import BeatView from './BeatView.vue'
+import BeatContextMenu from './BeatContextMenu.vue'
 import type { BeatData } from '@/utils/sheetParser'
 import { BEAT, SHEETS } from '@/utils/layout'
 
@@ -17,6 +18,9 @@ const props = withDefaults(
   defineProps<{
     beats: BeatData[]
     selectedIndex?: number
+    selectedIndices?: Set<number>
+    isSelectMode?: boolean
+    hasClipboard?: boolean
     rowsPerPage?: number
     playingBeatIndex?: number | null
     playingProgress?: number
@@ -26,8 +30,17 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  select: [index: number]
+  select: [index: number, ctrl: boolean, shift: boolean]
   addBeat: []
+  'startSelection': [index: number]
+  'selectTo': [index: number]
+  'contextCopy': [index: number]
+  'contextCut': [index: number]
+  'contextDelete': [index: number]
+  'contextDeselect': [index: number]
+  'contextSelect': [index: number]
+  'pasteBefore': [index: number]
+  'pasteAfter': [index: number]
 }>()
 
 // ─── 容器宽度感知 ──────────────────────────
@@ -120,6 +133,68 @@ function goToBeat(index: number): boolean {
   return changed
 }
 
+// ─── 多选 & 右键菜单 ────────────────────────────
+const contextMenuBeat = ref<number | null>(null)
+const contextMenuPos = ref({ x: 0, y: 0 })
+const showContextMenu = ref(false)
+const isMobile = window.innerWidth <= 800 || window.innerHeight <= 600
+/** 长按触发菜单后屏蔽随后的 click 事件，避免打断选中状态 */
+let wasLongPress = false
+
+function handleBeatClick(e: MouseEvent, index: number) {
+  // 长按弹出的菜单被关闭后，随后的 click 应忽略
+  if (wasLongPress) {
+    wasLongPress = false
+    return
+  }
+  if (props.isSelectMode) {
+    // 选择模式下点击相当于粘滞 Ctrl: 切换多选
+    emit('select', index, true, false)
+    return
+  }
+  emit('select', index, e.ctrlKey || e.metaKey, e.shiftKey)
+}
+
+function handleContextMenu(e: MouseEvent, index: number) {
+  // 右键选中该 beat 但不打断多选
+  emit('contextSelect', index)
+  contextMenuBeat.value = index
+  contextMenuPos.value = { x: e.clientX, y: e.clientY }
+  showContextMenu.value = true
+}
+
+// 移动端长按检测
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+let touchBeatIndex = -1
+
+function handleTouchStart(index: number) {
+  touchBeatIndex = index
+  wasLongPress = false
+  longPressTimer = setTimeout(() => {
+    longPressTimer = null
+    wasLongPress = true
+    contextMenuBeat.value = index
+    // 居中显示在触摸位置上方
+    contextMenuPos.value = { x: window.innerWidth / 2 - 70, y: window.innerHeight / 3 }
+    showContextMenu.value = true
+  }, 500)
+}
+
+function handleTouchEnd() {
+  if (longPressTimer) {
+    // 短按：清除定时器，让后续 click 正常处理
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+    // wasLongPress 仍为 false，click 会正常触发
+  }
+  // 长按已触发：wasLongPress 为 true，后续 click 将被屏蔽
+}
+
+function closeContextMenu() {
+  showContextMenu.value = false
+  contextMenuBeat.value = null
+}
+
 defineExpose({ goToBeat })
 </script>
 
@@ -138,15 +213,20 @@ defineExpose({ goToBeat })
 
     <div ref="bodyRef" class="sheets-body">
       <div class="sheets-grid">
-        <template v-for="(cell, cIdx) in cells" :key="cIdx">
+        <template v-for="(cell, cIdx) in cells" :key="cell.type === 'beat' ? 'b-' + cell.globalIndex : cell.type === 'add' ? 'add' : 'p-' + cIdx">
           <!-- Beat -->
           <BeatView
             v-if="cell.type === 'beat'"
             :active-keys="cell.beat.keys"
             :selected="cell.globalIndex === selectedIndex"
+            :multi-selected="selectedIndices?.has(cell.globalIndex) && cell.globalIndex !== selectedIndex"
             :label="cell.beat.label"
+            :seq-num="cell.globalIndex + 1"
             :playing-progress="cell.globalIndex === playingBeatIndex ? playingProgress : fadingBeatIndices?.includes(cell.globalIndex) ? 1 : undefined"
-            @click="emit('select', cell.globalIndex)"
+            @click="(e: MouseEvent) => handleBeatClick(e, cell.globalIndex)"
+            @contextmenu="(e: MouseEvent) => handleContextMenu(e, cell.globalIndex)"
+            @touchstart="handleTouchStart(cell.globalIndex)"
+            @touchend="handleTouchEnd"
           />
                 <button
             v-else-if="cell.type === 'add'"
@@ -174,6 +254,27 @@ defineExpose({ goToBeat })
         <polyline points="9 18 15 12 9 6" />
       </svg>
     </button>
+
+    <!-- 右键菜单 -->
+    <BeatContextMenu
+      v-if="showContextMenu && contextMenuBeat !== null"
+      :x="contextMenuPos.x"
+      :y="contextMenuPos.y"
+      :is-mobile="isMobile"
+      :is-select-mode="!!props.isSelectMode"
+      :has-selection="(props.selectedIndices?.size ?? 0) > 0 || props.selectedIndex !== undefined"
+      :selection-count="(props.selectedIndices?.size ?? 0) + (props.selectedIndex !== undefined && !props.selectedIndices?.has(props.selectedIndex) ? 1 : 0)"
+      :has-clipboard="!!props.hasClipboard"
+      @close="closeContextMenu"
+      @start-select="emit('startSelection', contextMenuBeat!); closeContextMenu()"
+      @select-to="emit('selectTo', contextMenuBeat!); closeContextMenu()"
+      @deselect="emit('contextDeselect', contextMenuBeat!); closeContextMenu()"
+      @copy="emit('contextCopy', contextMenuBeat!); closeContextMenu()"
+      @cut="emit('contextCut', contextMenuBeat!); closeContextMenu()"
+      @delete-beat="emit('contextDelete', contextMenuBeat!); closeContextMenu()"
+      @paste-before="emit('pasteBefore', contextMenuBeat!); closeContextMenu()"
+      @paste-after="emit('pasteAfter', contextMenuBeat!); closeContextMenu()"
+    />
   </div>
 </template>
 
