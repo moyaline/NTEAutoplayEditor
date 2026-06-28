@@ -45,21 +45,9 @@ if (pkg.version !== newVersion) {
   console.log(`  ✔ package.json → v${newVersion}`)
 }
 
-// ─── 2. 更新 AppHeader.vue 中的显示版本 ───
-const headerPath = resolve(ROOT, 'src/layouts/AppHeader.vue')
-let headerContent = readFileSync(headerPath, 'utf-8')
-
-// 替换所有形如 v<数字>.<数字>.<数字> 的版本字符串
-const headerRegex = /v\d+\.\d+\.\d+/
-if (headerRegex.test(headerContent)) {
-  headerContent = headerContent.replace(headerRegex, `v${newVersion}`)
-  writeFileSync(headerPath, headerContent, 'utf-8')
-  console.log(`  ✔ AppHeader.vue → v${newVersion}`)
-}
-
-// ─── 3. 暂存改动 ──────────────────────────
+// ─── 2. 暂存改动 ──────────────────────────
 try {
-  execSync(`git add "${pkgPath}" "${headerPath}"`, { cwd: ROOT, stdio: 'ignore' })
+  execSync(`git add "${pkgPath}"`, { cwd: ROOT, stdio: 'ignore' })
   console.log('  ✔ 已暂存版本更新')
 } catch {
   console.error('  ⚠ 暂存失败，请手动 git add')
