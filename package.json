@@ -8,7 +8,9 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "type-check": "vue-tsc --build",
+    "postinstall": "node scripts/install-hooks.js",
+    "hooks:install": "node scripts/install-hooks.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.1",

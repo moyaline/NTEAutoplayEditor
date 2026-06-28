@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useEditorStore } from '@/stores/editor'
+import { version } from '../../package.json'
 
 const emit = defineEmits<{
   'toggle-sidebar': []
@@ -97,7 +98,7 @@ const editor = useEditorStore()
       </button>
       <span class="h-5 w-px bg-(--color-border-base)"></span>
       <div class="about-trigger">
-        <span class="text-xs text-(--color-text-secondary) cursor-pointer">v0.2.0</span>
+        <span class="text-xs text-(--color-text-secondary) cursor-pointer">v{{ version }}</span>
 
         <!-- About 浮窗 -->
         <div class="about-popup">

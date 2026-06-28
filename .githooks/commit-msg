@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+/**
+ * commit-msg Git hook
+ *
+ * 在每次提交前检查提交信息，若包含 v<major>.<minor>.<patch> 版本号，
+ * 则自动更新 package.json 和 AppHeader.vue 中的版本号并暂存。
+ *
+ * 安装: 在项目根目录执行以下命令一次即可：
+ *   git config core.hooksPath .githooks
+ *
+ * 或运行: node scripts/install-hooks.js
+ */
+
+import { execSync } from 'child_process'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const ROOT = resolve(__dirname, '..')
+
+try {
+  execSync(`node "${resolve(ROOT, 'scripts/bump-version.js')}" "${process.argv[2]}"`, {
+    cwd: ROOT,
+    stdio: 'inherit',
+  })
+} catch {
+  // bump-version 内部已处理错误，静默退出
+  process.exit(0)
+}
