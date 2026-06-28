@@ -204,12 +204,12 @@ function keyId(note: Note, octave: number): string {
 
 /* ─── Dark Mode ─── */
 .dark .keypad-key-plate {
-  background: #142834;
-  border-color: #4a5a6a;
+  background: #1a1a1a;
+  border-color: #3a3a3a;
 }
 
 .dark .keypad-key-plate-inner {
-  background: #0b1a26;
+  background: #0d0d0d;
 }
 
 .dark .keypad-key-note {
@@ -217,9 +217,9 @@ function keyId(note: Note, octave: number): string {
 }
 
 .dark .keypad-key--active .keypad-key-plate {
-  border-color: var(--color-primary-300, #48cae4);
-  box-shadow: inset 0 0 0 2px var(--color-primary-300, #48cae4),
-              0 0 0 2px rgba(72, 202, 228, 0.25);
+  border-color: var(--color-primary-400, #00b4d8);
+  box-shadow: inset 0 0 0 2px var(--color-primary-400, #00b4d8),
+              0 0 0 2px rgba(0, 180, 216, 0.3);
 }
 
 /* ─── 移动端缩放 ─── */

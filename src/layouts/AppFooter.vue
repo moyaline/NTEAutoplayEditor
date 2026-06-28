@@ -341,4 +341,19 @@ watch(() => loadProgress.value.loaded, (val) => {
     font-size: 13px;
   }
 }
+
+/* ─── 深色模式播放按钮 ─── */
+.dark .ctrl--play {
+  background: rgba(0, 180, 216, 0.12);
+  color: #48cae4;
+}
+.dark .ctrl--play:hover {
+  background: rgba(0, 180, 216, 0.22);
+  color: #90e0ef;
+}
+
+.dark .ctrl:hover {
+  background: rgba(0, 180, 216, 0.1);
+  color: #90e0ef;
+}
 </style>

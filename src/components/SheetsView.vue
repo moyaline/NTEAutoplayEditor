@@ -372,6 +372,12 @@ defineExpose({ goToBeat })
   color: var(--color-primary-500, #0096b7);
 }
 
+.dark .sheets-add-beat:hover {
+  background: rgba(0, 180, 216, 0.12);
+  border-color: rgba(0, 180, 216, 0.4);
+  color: #48cae4;
+}
+
 .sheets-add-beat:active {
   transform: scale(0.96);
 }

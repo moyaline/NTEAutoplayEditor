@@ -150,14 +150,14 @@ function isActive(note: Note, octave: number): boolean {
   box-shadow: 0 0 0 2px rgba(72, 202, 228, 0.2);
 }
 
-/* ─── 小节时值警告（深黄色 label） ─── */
+/* ─── 小节时值警告（橙色 label） ─── */
 .beat-view--invalid .beat-label {
-  color: #ccbb11 !important;
+  color: var(--color-warning, #e67e22) !important;
   font-weight: 700;
 }
 
 .dark .beat-view--invalid .beat-label {
-  color: #eeee55 !important;
+  color: var(--color-warning, #e67e22) !important;
 }
 
 /* ─── 序号 #n（左上角小字灰色） ─── */
@@ -215,11 +215,12 @@ function isActive(note: Note, octave: number): boolean {
 
 /* ─── 暗色模式 ─── */
 .dark .beat-dot {
-  background: #3a4a5a;
+  background: #2a2a2a;
 }
 
 .dark .beat-dot--on {
-  background: #48cae4;
+  background: #00b4d8;
+  box-shadow: 0 0 6px rgba(0, 180, 216, 0.5);
 }
 
 /* ─── 移动端（使用 BEAT_MOBILE 常量） ─── */

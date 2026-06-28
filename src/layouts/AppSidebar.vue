@@ -4,6 +4,49 @@ import { useEditorStore } from '@/stores/editor'
 import { cumulativeToLabel } from '@/utils/sheetParser'
 
 const editor = useEditorStore()
+const fileInput = ref<HTMLInputElement | null>(null)
+
+function handleNew() {
+  editor.confirmSaveBefore(() => editor.newSheet())
+}
+
+function handleOpen() {
+  editor.confirmSaveBefore(() => fileInput.value?.click())
+}
+
+function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  // 从文件名提取乐谱名（去掉扩展名）
+  editor.fileName = file.name.replace(/\.[^.]+$/, '')
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const text = e.target?.result as string
+    try {
+      editor.loadSheet(text)
+    } catch {
+      alert('无法解析乐谱文件，请检查 JSON 格式')
+    }
+  }
+  reader.readAsText(file)
+
+  // 重置 input，允许重复选择同一文件
+  input.value = ''
+}
+
+function handleSave() {
+  const json = editor.exportSheet()
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${editor.fileName || '未命名乐谱'}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 const totalBeats = computed(() => editor.beats.length)
 
@@ -61,6 +104,48 @@ function commitTsDen() {
 
 <template>
   <aside class="app-sidebar flex flex-col border-r border-(--color-border-base) bg-(--color-card-bg)">
+    <!-- 文件操作（横排） -->
+    <div class="flex flex-col gap-3 p-4">
+      <h2 class="text-xs font-semibold uppercase tracking-wider text-(--color-text-secondary)">文件操作</h2>
+      <div class="flex items-center gap-2">
+        <button
+          class="sidebar-file-btn"
+          title="新建乐谱"
+          @click="handleNew"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>新建</span>
+        </button>
+        <button
+          class="sidebar-file-btn"
+          title="打开乐谱"
+          @click="handleOpen"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+          <span>打开</span>
+        </button>
+        <button
+          class="sidebar-file-btn sidebar-file-btn--primary"
+          title="保存乐谱"
+          @click="handleSave"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17,21 17,13 7,13 7,21" />
+            <polyline points="7,3 7,8 15,8" />
+          </svg>
+          <span>保存</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="mx-3 border-t border-(--color-border-base)"></div>
+
     <!-- 参数配置 -->
     <div class="flex flex-col gap-3 p-4">
       <h2 class="text-xs font-semibold uppercase tracking-wider text-(--color-text-secondary)">参数配置</h2>
@@ -134,6 +219,15 @@ function commitTsDen() {
         </div>
       </div>
     </div>
+
+    <!-- 隐藏的文件选择器 -->
+    <input
+      ref="fileInput"
+      type="file"
+      accept=".json,application/json"
+      style="display: none"
+      @change="handleFileChange"
+    />
   </aside>
 </template>
 
@@ -218,6 +312,39 @@ function commitTsDen() {
   color: var(--color-text-placeholder, #a0b0c0);
   text-align: center;
   line-height: 1.2;
+}
+
+/* ─── 侧边栏文件操作按钮 ─── */
+.sidebar-file-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #5a6b7a);
+  background: var(--color-page-bg, #f8fafc);
+  border: 1px solid var(--color-border-base, #e2e8f0);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.sidebar-file-btn:hover {
+  background: var(--color-border-base, #e2e8f0);
+  border-color: var(--color-text-placeholder, #a0b0c0);
+}
+.sidebar-file-btn--primary {
+  color: #fff;
+  background: var(--color-primary, #00b4d8);
+  border-color: var(--color-primary, #00b4d8);
+}
+.sidebar-file-btn--primary:hover {
+  opacity: 0.9;
+  background: var(--color-primary, #00b4d8);
+  border-color: var(--color-primary, #00b4d8);
 }
 </style>
 

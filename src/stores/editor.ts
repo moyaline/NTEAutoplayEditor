@@ -34,6 +34,7 @@ export const useEditorStore = defineStore('editor', () => {
 
   const autoCreateBeat = ref(load('autoCreateBeat', false))
   const showValidityCheck = ref(load('showValidityCheck', true))
+  const darkMode = ref(load('darkMode', false))
 
   // ─── 持久化 ──
   watch(soundEnabled, v => save('soundEnabled', v))
@@ -42,6 +43,14 @@ export const useEditorStore = defineStore('editor', () => {
   watch(playFollow, v => save('playFollow', v))
   watch(autoCreateBeat, v => save('autoCreateBeat', v))
   watch(showValidityCheck, v => save('showValidityCheck', v))
+  watch(darkMode, v => { save('darkMode', v); applyDarkMode(v) })
+
+  // ─── 深色模式初始应用 ──
+  function applyDarkMode(v: boolean) {
+    document.documentElement.classList.toggle('dark', v)
+  }
+  // 初始化
+  if (typeof document !== 'undefined') applyDarkMode(darkMode.value)
 
   // ─── 撤销/重做 ──
   const undoStack = ref<UndoEntry[]>([])
@@ -585,6 +594,34 @@ export const useEditorStore = defineStore('editor', () => {
     markDirty()
   }
 
+  /** 在当前选中 beat 后追加一个新 beat */
+  function addBeatAfter() {
+    if (selectedBeatIndex.value === null) return
+    const idx = selectedBeatIndex.value
+    const prevBeat = beats.value[idx]
+    if (!prevBeat) return
+    pushSnapshot()
+    const { num: tn, den: td } = sheetData.value.timeSignature ?? { num: 4, den: 4 }
+    const newArr = [...beats.value]
+    const newNum = 1
+    const newDen = 8
+    const newNvr = newNum / newDen
+    const newBeat: BeatData = {
+      keys: [],
+      rawNotes: [],
+      nvr: newNvr,
+      num: newNum,
+      den: newDen,
+      cumulative: prevBeat.cumulative + prevBeat.nvr,
+      label: beatLabel(newNum, newDen, measureForCumulative(prevBeat.cumulative + prevBeat.nvr, tn, td)),
+    }
+    newArr.splice(idx + 1, 0, newBeat)
+    sheetData.value = { ...sheetData.value, beats: newArr }
+    selectedBeatIndex.value = idx + 1
+    recalcAllLabels()
+    markDirty()
+  }
+
   /** 更新当前 Beat 的 nvr */
   function updateNvr(num: number, den: number) {
     if (selectedBeatIndex.value === null) return
@@ -711,6 +748,7 @@ export const useEditorStore = defineStore('editor', () => {
     playFollow,
     autoCreateBeat,
     showValidityCheck,
+    darkMode,
     invalidBeatIndices,
     isPlaying,
     playingBeatIndex,
@@ -728,6 +766,7 @@ export const useEditorStore = defineStore('editor', () => {
     rescheduleTimer,
     toggleNoteKey,
     addBeat,
+    addBeatAfter,
     forceClearFading,
     updateNvr,
     nvrHalve,
@@ -754,6 +793,8 @@ export const useEditorStore = defineStore('editor', () => {
     deleteSelectedBeats,
     undo,
     redo,
+    undoStack,
+    redoStack,
     shiftAnchor,
     ctrlAnchor,
     setShiftAnchor,

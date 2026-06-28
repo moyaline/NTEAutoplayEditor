@@ -36,6 +36,21 @@ const rowOptions = [1, 2, 3, 4]
     </header>
 
     <div class="settings-body">
+      <!-- ═══ 深色模式 ═══ -->
+      <section class="settings-section">
+        <h3 class="section-title">界面</h3>
+        <label class="settings-row">
+          <span class="settings-label">深色模式</span>
+          <button
+            class="toggle"
+            :class="{ 'toggle--on': editor.darkMode }"
+            @click="editor.darkMode = !editor.darkMode"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </label>
+      </section>
+
       <!-- ═══ 按键音 ═══ -->
       <section class="settings-section">
         <h3 class="section-title">按键音</h3>

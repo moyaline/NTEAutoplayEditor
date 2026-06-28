@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useEditorStore } from '@/stores/editor'
 
 const emit = defineEmits<{
@@ -9,49 +8,6 @@ const emit = defineEmits<{
 }>()
 
 const editor = useEditorStore()
-const fileInput = ref<HTMLInputElement | null>(null)
-
-function handleNew() {
-  editor.confirmSaveBefore(() => editor.newSheet())
-}
-
-function handleOpen() {
-  editor.confirmSaveBefore(() => fileInput.value?.click())
-}
-
-function handleFileChange(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-
-  // 从文件名提取乐谱名（去掉扩展名）
-  editor.fileName = file.name.replace(/\.[^.]+$/, '')
-
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const text = e.target?.result as string
-    try {
-      editor.loadSheet(text)
-    } catch {
-      alert('无法解析乐谱文件，请检查 JSON 格式')
-    }
-  }
-  reader.readAsText(file)
-
-  // 重置 input，允许重复选择同一文件
-  input.value = ''
-}
-
-function handleSave() {
-  const json = editor.exportSheet()
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${editor.fileName || '未命名乐谱'}.json`
-  a.click()
-  URL.revokeObjectURL(url)
-}
 </script>
 
 <template>
@@ -76,38 +32,45 @@ function handleSave() {
 
     <!-- Center: Quick Actions -->
     <div class="flex items-center gap-2">
+      <!-- 追加 Beat -->
       <button
         class="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-(--color-text-secondary) hover:bg-(--color-border-base) transition-all"
-        title="新建乐谱"
-        @click="handleNew"
+        title="在当前 beat 后追加一个新 beat"
+        :disabled="editor.selectedBeatIndex === null"
+        @click="editor.addBeatAfter()"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-        <span class="btn-text">新建</span>
+        <span class="btn-text">添加拍</span>
       </button>
+
+      <span class="h-5 w-px bg-(--color-border-base)"></span>
+
+      <!-- 撤销 -->
       <button
-        class="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-(--color-text-secondary) hover:bg-(--color-border-base) transition-all"
-        title="打开乐谱"
-        @click="handleOpen"
+        class="header-icon-btn"
+        title="撤销"
+        :disabled="editor.undoStack.length === 0"
+        @click="editor.undo()"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          <polyline points="1,4 1,10 7,10" />
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
         </svg>
-        <span class="btn-text">打开</span>
       </button>
+      <!-- 重做 -->
       <button
-        class="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:opacity-90 transition-all"
-        title="保存乐谱"
-        @click="handleSave"
+        class="header-icon-btn"
+        title="重做"
+        :disabled="editor.redoStack.length === 0"
+        @click="editor.redo()"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-          <polyline points="17,21 17,13 7,13 7,21" />
-          <polyline points="7,3 7,8 15,8" />
+          <polyline points="23,4 23,10 17,10" />
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
         </svg>
-        <span class="btn-text">保存</span>
       </button>
     </div>
 
@@ -156,14 +119,6 @@ function handleSave() {
       </div>
     </div>
 
-    <!-- 隐藏的文件选择器 -->
-    <input
-      ref="fileInput"
-      type="file"
-      accept=".json,application/json"
-      style="display: none"
-      @change="handleFileChange"
-    />
   </header>
 </template>
 
@@ -276,7 +231,7 @@ function handleSave() {
 
 /* Dark mode popup */
 .dark .about-card {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 /* ─── 移动端 ─── */
