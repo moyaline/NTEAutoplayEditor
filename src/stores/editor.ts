@@ -12,6 +12,9 @@ import type { BeatData } from '@/utils/sheetParser'
 import type { SheetData } from '@/utils/sheetParser'
 import { playNote } from '@/utils/notePlayer'
 import { load, save } from '@/utils/storage'
+import { parseMidiFile } from '@/utils/midiParser'
+import { midiTracksToSheet } from '@/utils/midiToSheet'
+import type { MidiProject, MidiTrack } from '@/types/midi'
 
 interface UndoEntry {
   sheetData: SheetData
@@ -35,6 +38,10 @@ export const useEditorStore = defineStore('editor', () => {
   const autoCreateBeat = ref(load('autoCreateBeat', false))
   const showValidityCheck = ref(load('showValidityCheck', true))
   const darkMode = ref(load('darkMode', false))
+
+  // ─── MIDI 导入状态 ──
+  const midiProject = ref<MidiProject | null>(null)
+  const showMidiSelector = ref(false)
 
   // ─── 持久化 ──
   watch(soundEnabled, v => save('soundEnabled', v))
@@ -638,10 +645,10 @@ export const useEditorStore = defineStore('editor', () => {
     markDirty()
   }
 
-  /** nvr 减半（分母 ×2，分母上限 32 时改为分子 ÷2） */
+  /** nvr 减半（分母 ×2，分母上限 64 时改为分子 ÷2） */
   function nvrHalve() {
     const { num, den } = currentNvr.value
-    if (den * 2 <= 32) {
+    if (den * 2 <= 64) {
       updateNvr(num, den * 2)
     } else {
       updateNvr(Math.max(1, Math.ceil(num / 2)), den)
@@ -709,10 +716,47 @@ export const useEditorStore = defineStore('editor', () => {
     pushSnapshot()
     sheetData.value = {
       ...sheetData.value,
-      timeSignature: { num: Math.max(1, Math.min(32, num)), den: Math.max(1, Math.min(32, den)) },
+      timeSignature: { num: Math.max(1, Math.min(32, num)), den: Math.max(1, Math.min(64, den)) },
     }
     recalcAllLabels()
     markDirty()
+  }
+
+  /** 加载 MIDI 文件并显示轨道选择器 */
+  function loadMidiFile(data: ArrayBuffer | Uint8Array, name: string) {
+    try {
+      const project = parseMidiFile(data)
+      midiProject.value = project
+      fileName.value = name
+      showMidiSelector.value = true
+    } catch (e) {
+      console.error('MIDI 解析失败:', e)
+      alert('无法解析 MIDI 文件')
+    }
+  }
+
+  /** 从选中的 MIDI 轨道导入乐谱 */
+  function importMidiTracks(tracks: MidiTrack[], project: MidiProject) {
+    try {
+      const sheet = midiTracksToSheet(tracks, project.metadata)
+      sheetData.value = sheet
+      selectedBeatIndex.value = 0
+      isNewFile.value = false
+      isDirty.value = false
+      showMidiSelector.value = false
+      midiProject.value = null
+      stopPlay()
+      clearMultiSelection()
+    } catch (e) {
+      console.error('MIDI 转换失败:', e)
+      alert('MIDI 转换为乐谱失败')
+    }
+  }
+
+  /** 清除 MIDI 导入状态 */
+  function cancelMidiImport() {
+    showMidiSelector.value = false
+    midiProject.value = null
   }
 
   /** 导出乐谱为 JSON 字符串 */
@@ -776,6 +820,11 @@ export const useEditorStore = defineStore('editor', () => {
     setBpm,
     setTimeSignature,
     exportSheet,
+    loadMidiFile,
+    importMidiTracks,
+    cancelMidiImport,
+    midiProject,
+    showMidiSelector,
     confirmSaveBefore,
     saveAndProceed,
     discardAndProceed,

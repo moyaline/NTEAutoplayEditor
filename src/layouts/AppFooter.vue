@@ -53,7 +53,7 @@ function commitNum() {
 
 function commitDen() {
   const num = Math.max(1, parseInt(numInput.value) || 1)
-  const den = Math.max(1, Math.min(32, parseInt(denInput.value) || 2))
+  const den = Math.max(1, Math.min(64, parseInt(denInput.value) || 2))
   editor.updateNvr(num, den)
   syncNvr()
 }

@@ -2,6 +2,8 @@
 import { ref, computed, watch } from 'vue'
 import { useEditorStore } from '@/stores/editor'
 import { cumulativeToLabel } from '@/utils/sheetParser'
+import { parseMidiProject } from '@/utils/midiParser'
+import MidiTrackSelector from '@/components/MidiTrackSelector.vue'
 
 const editor = useEditorStore()
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -21,20 +23,65 @@ function handleFileChange(event: Event) {
 
   // 从文件名提取乐谱名（去掉扩展名）
   editor.fileName = file.name.replace(/\.[^.]+$/, '')
+  const ext = file.name.split('.').pop()?.toLowerCase()
 
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const text = e.target?.result as string
-    try {
-      editor.loadSheet(text)
-    } catch {
-      alert('无法解析乐谱文件，请检查 JSON 格式')
+  if (ext === 'mid' || ext === 'midi') {
+    // ─── MIDI 文件：二进制读取 ───
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer
+      if (arrayBuffer) {
+        editor.loadMidiFile(arrayBuffer, editor.fileName)
+      }
     }
+    reader.readAsArrayBuffer(file)
+  } else if (ext === 'json') {
+    // ─── 中间项目文件？先尝试解析为 MidiProject ───
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      // 尝试作为中间文件解析
+      try {
+        const project = parseMidiProject(text)
+        // 成功：显示轨道选择器
+        editor.fileName = file.name.replace(/\.[^.]+$/, '')
+        editor.midiProject = project
+        editor.showMidiSelector = true
+        return
+      } catch {
+        // 不是中间文件，尝试作为乐谱文件解析
+        try {
+          editor.loadSheet(text)
+        } catch {
+          alert('无法解析文件，请检查 JSON 格式')
+        }
+      }
+    }
+    reader.readAsText(file)
+  } else {
+    // ─── 其他文件：尝试作为 JSON 乐谱 ───
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      try {
+        editor.loadSheet(text)
+      } catch {
+        alert('无法解析乐谱文件，请检查 JSON 格式')
+      }
+    }
+    reader.readAsText(file)
   }
-  reader.readAsText(file)
 
   // 重置 input，允许重复选择同一文件
   input.value = ''
+}
+
+function onMidiConfirm(tracks: any[], project: any) {
+  editor.importMidiTracks(tracks, project)
+}
+
+function onMidiCancel() {
+  editor.cancelMidiImport()
 }
 
 function handleSave() {
@@ -89,14 +136,14 @@ watch(() => editor.tsDen, syncTs, { immediate: true })
 
 function commitTsNum() {
   const num = Math.max(1, parseInt(tsNumInput.value) || 4)
-  const den = Math.max(1, Math.min(32, parseInt(tsDenInput.value) || 4))
+  const den = Math.max(1, Math.min(64, parseInt(tsDenInput.value) || 4))
   editor.setTimeSignature(num, den)
   syncTs()
 }
 
 function commitTsDen() {
   const num = Math.max(1, parseInt(tsNumInput.value) || 4)
-  const den = Math.max(1, Math.min(32, parseInt(tsDenInput.value) || 4))
+  const den = Math.max(1, Math.min(64, parseInt(tsDenInput.value) || 4))
   editor.setTimeSignature(num, den)
   syncTs()
 }
@@ -186,7 +233,7 @@ function commitTsDen() {
           <span class="text-sm text-(--color-text-placeholder) font-medium">/</span>
           <input
             class="sidebar-input sidebar-input--mono sidebar-input--narrow"
-            type="number" min="1" max="32"
+            type="number" min="1" max="64"
             v-model="tsDenInput"
             @blur="commitTsDen"
             @keydown.enter="($event.target as HTMLInputElement).blur()"
@@ -220,13 +267,21 @@ function commitTsDen() {
       </div>
     </div>
 
-    <!-- 隐藏的文件选择器 -->
+    <!-- 隐藏的文件选择器（支持 json / mid / midi） -->
     <input
       ref="fileInput"
       type="file"
-      accept=".json,application/json"
+      accept=".json,application/json,.mid,.midi,audio/midi"
       style="display: none"
       @change="handleFileChange"
+    />
+
+    <!-- MIDI 轨道选择浮窗 -->
+    <MidiTrackSelector
+      v-if="editor.showMidiSelector && editor.midiProject"
+      :project="editor.midiProject"
+      @confirm="onMidiConfirm"
+      @cancel="onMidiCancel"
     />
   </aside>
 </template>
@@ -273,6 +328,7 @@ function commitTsDen() {
 }
 .sidebar-input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .sidebar-input--narrow {
