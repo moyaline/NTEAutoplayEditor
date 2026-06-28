@@ -97,7 +97,7 @@ const editor = useEditorStore()
       </button>
       <span class="h-5 w-px bg-(--color-border-base)"></span>
       <div class="about-trigger">
-        <span class="text-xs text-(--color-text-secondary) cursor-pointer">v0.1.2</span>
+        <span class="text-xs text-(--color-text-secondary) cursor-pointer">v0.2.0</span>
 
         <!-- About 浮窗 -->
         <div class="about-popup">
