@@ -5,7 +5,7 @@
  * 设置项：
  *   - 按键音开关
  *   - 按键音音量（开关关闭时不可用）
- *   - Sheet 最大行数（1–4，实际行数由可用高度决定）
+ *   - Sheet 最大行数（1–10，实际行数由可用高度决定）
  *   - 播放时跟随：关闭后用户选择 Beat 不影响播放
  */
 
@@ -20,7 +20,8 @@ function onSoundToggle(val: boolean) {
   setSoundEnabled(val)
 }
 
-const rowOptions = [1, 2, 3, 4]
+const rowsMin = 1
+const rowsMax = 10
 </script>
 
 <template>
@@ -92,17 +93,18 @@ const rowOptions = [1, 2, 3, 4]
 
         <label class="settings-row">
           <span class="settings-label">最大行数</span>
-          <select
-            class="select"
-            :value="editor.rowsPerPage"
-            @change="editor.rowsPerPage = parseInt(($event.target as HTMLSelectElement).value)"
-          >
-            <option
-              v-for="n in rowOptions"
-              :key="n"
-              :value="n"
-            >{{ n }} 行</option>
-          </select>
+          <div class="slider-group">
+            <input
+              type="range"
+              :min="rowsMin"
+              :max="rowsMax"
+              step="1"
+              :value="editor.rowsPerPage"
+              class="slider"
+              @input="editor.rowsPerPage = parseInt(($event.target as HTMLInputElement).value)"
+            />
+            <span class="slider-value">{{ editor.rowsPerPage }} 行</span>
+          </div>
         </label>
 
         <label class="settings-row">
