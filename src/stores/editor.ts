@@ -493,63 +493,35 @@ export const useEditorStore = defineStore('editor', () => {
       startProgress(startIdx, duration)
     }
 
-    if (playFollow.value) {
-      scheduleNext()
-    } else {
-      // 不跟随：用 playingBeatIndex 调度后续 Beat
-      scheduleNextFrom(startIdx)
-    }
+    // 统一使用显式 idx 调度，避免读取 reactive state 时的时序问题
+    scheduleFrom(startIdx)
   }
 
-  /** 不跟随模式：基于 playingBeatIndex 调度下一拍 */
-  function scheduleNextFrom(idx: number) {
+  /**
+   * 基于当前 idx 调度下一拍。
+   * 使用显式参数而非 reactive state，避免 Vue 响应式更新时序导致的跳拍。
+   */
+  function scheduleFrom(idx: number) {
     if (!isPlaying.value) return
-    if (idx >= beats.value.length - 1) {
-      const beat = beats.value[idx]
-      if (beat) {
-        const delay = (240000 / bpm.value) * beat.nvr + 100
-        playTimer = window.setTimeout(() => {
-          if (isPlaying.value) stopPlay()
-        }, delay)
-      }
-      return
-    }
-    const beat = beats.value[idx]
-    if (!beat) { stopPlay(); return }
-    const delay = (240000 / bpm.value) * beat.nvr
-    playTimer = window.setTimeout(() => {
-      if (!isPlaying.value) return
-      _advanceBeat(idx + 1)
-      scheduleNextFrom(idx + 1)
-    }, delay)
-  }
-
-  /** 递归调度下一拍（每个 Beat 的 nvr 时值可能不同） */
-  function scheduleNext() {
-    if (!isPlaying.value) return
-    // 跟随关闭时使用 playingBeatIndex，避免 selectedBeatIndex 不更新导致的无限循环
-    const idx = playFollow.value ? selectedBeatIndex.value : playingBeatIndex.value
-    if (idx === null) { stopPlay(); return }
-    const beat = beats.value[idx]
-    if (!beat) { stopPlay(); return }
-
-    // 时值 = (240000 / BPM) * nvr  （毫秒）
-    // 说明: 1 个全音符 = 4 个四分音符 = 4 * 60000/BPM ms
-    //       nvr 是全音符的分数，所以 delay = 240000/BPM * nvr
-    const delay = (240000 / bpm.value) * beat.nvr
-
     if (idx >= beats.value.length - 1) {
       // 最后一拍：让进度动画自然走完，延时后再清理
+      const beat = beats.value[idx]
+      if (!beat) { stopPlay(); return }
+      const delay = (240000 / bpm.value) * beat.nvr + 100
       playTimer = window.setTimeout(() => {
         if (isPlaying.value) stopPlay()
-      }, delay + 100)
+      }, delay)
       return
     }
+    const beat = beats.value[idx]
+    if (!beat) { stopPlay(); return }
+    const delay = (240000 / bpm.value) * beat.nvr
 
     playTimer = window.setTimeout(() => {
       if (!isPlaying.value) return
       _advanceBeat(idx + 1)
-      scheduleNext()
+      // 递归时也传递显式 idx
+      scheduleFrom(idx + 1)
     }, delay)
   }
 
@@ -559,7 +531,10 @@ export const useEditorStore = defineStore('editor', () => {
       clearTimeout(playTimer)
       playTimer = null
     }
-    scheduleNext()
+    // 用当前 selectedBeatIndex 作为起点重排
+    if (selectedBeatIndex.value !== null) {
+      scheduleFrom(selectedBeatIndex.value)
+    }
   }
 
   function stopPlay() {
